@@ -59,5 +59,11 @@ export async function refreshSession(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
+  if (pathname.endsWith("/print")) {
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+
   return response;
 }

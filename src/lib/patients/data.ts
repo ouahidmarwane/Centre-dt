@@ -51,3 +51,6 @@ export async function getPatient(patientId: string): Promise<Patient | null> {
 
   return data;
 }
+
+export type OperationalPatient=Pick<Patient,"id"|"first_name"|"last_name"|"date_of_birth"|"phone"|"profession"|"address"|"has_mutuelle"|"mutuelle_name"|"is_active">;
+export async function getOperationalPatient(patientId:string):Promise<OperationalPatient|null>{const supabase=await createClient();const{data,error}=await supabase.from("patients").select("id,first_name,last_name,date_of_birth,phone,profession,address,has_mutuelle,mutuelle_name,is_active").eq("id",patientId).maybeSingle();if(error)throw new Error("PATIENT_LOOKUP_UNAVAILABLE");return data;}

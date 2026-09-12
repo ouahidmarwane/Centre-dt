@@ -656,6 +656,115 @@ export type Database = {
           },
         ]
       }
+      prescription_items: {
+        Row: {
+          created_at: string
+          dosage: string
+          duration: string | null
+          frequency: string
+          id: string
+          instructions: string | null
+          medication_name: string
+          position: number
+          prescription_id: string
+          route: string | null
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          duration?: string | null
+          frequency: string
+          id?: string
+          instructions?: string | null
+          medication_name: string
+          position: number
+          prescription_id: string
+          route?: string | null
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          duration?: string | null
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          medication_name?: string
+          position?: number
+          prescription_id?: string
+          route?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_items_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          clinic_name_snapshot: string
+          created_at: string
+          created_by: string
+          id: string
+          issued_at: string
+          notes: string | null
+          patient_date_of_birth_snapshot: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          prescriber_name_snapshot: string
+          status: Database["public"]["Enums"]["prescription_status"]
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          clinic_name_snapshot?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          patient_date_of_birth_snapshot?: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          prescriber_name_snapshot: string
+          status?: Database["public"]["Enums"]["prescription_status"]
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          clinic_name_snapshot?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          patient_date_of_birth_snapshot?: string | null
+          patient_first_name_snapshot?: string
+          patient_id?: string
+          patient_last_name_snapshot?: string
+          prescriber_name_snapshot?: string
+          status?: Database["public"]["Enums"]["prescription_status"]
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -806,6 +915,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_prescription: {
+        Args: {
+          target_items: Json
+          target_notes: string
+          target_patient_id: string
+        }
+        Returns: string
+      }
       get_due_appointment_reminders: {
         Args: { reference_time?: string }
         Returns: {
@@ -916,6 +1033,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      void_prescription: {
+        Args: {
+          target_patient_id: string
+          target_prescription_id: string
+          target_reason: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "doctor" | "assistant"
@@ -941,6 +1066,7 @@ export type Database = {
       intervention_status: "planned" | "performed" | "cancelled"
       payment_method: "cash" | "card" | "bank_transfer" | "cheque" | "other"
       payment_status: "received" | "reversed"
+      prescription_status: "active" | "voided"
       security_event_severity: "info" | "warning" | "critical"
     }
     CompositeTypes: {
@@ -1094,6 +1220,7 @@ export const Constants = {
       intervention_status: ["planned", "performed", "cancelled"],
       payment_method: ["cash", "card", "bank_transfer", "cheque", "other"],
       payment_status: ["received", "reversed"],
+      prescription_status: ["active", "voided"],
       security_event_severity: ["info", "warning", "critical"],
     },
   },

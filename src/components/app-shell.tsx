@@ -72,8 +72,8 @@ export function AppShell({
   user: AuthenticatedUser;
 }) {
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-[var(--border)] bg-white px-4 py-5 md:flex md:flex-col">
+    <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)] print:block">
+      <aside className="hidden border-r border-[var(--border)] bg-white px-4 py-5 md:flex md:flex-col print:!hidden">
         <Link className="flex items-center gap-3 px-2" href="/dashboard">
           <span className="grid size-10 place-items-center rounded-lg bg-[var(--brand)] font-bold text-white">
             O
@@ -97,7 +97,7 @@ export function AppShell({
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-white/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-white/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8 print:hidden">
           <div className="flex min-h-11 items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-slate-900">Espace clinique</p>
@@ -128,7 +128,7 @@ export function AppShell({
             </details>
           </div>
         </header>
-        <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:p-0">{children}</main>
       </div>
     </div>
   );

@@ -16,6 +16,9 @@ import { getPatientFinances } from "@/lib/finance/data";
 import { hasPermission } from "@/lib/permissions";
 import { getPatientAppointments } from "@/lib/appointments/data";
 import { clinicDateValue, formatClinicDate, formatClinicTime } from "@/lib/appointments/validation";
+import { createPrescriptionAction, voidPrescriptionAction } from "@/app/(dashboard)/patients/[id]/prescription-actions";
+import { PatientPrescriptions } from "@/components/prescriptions/patient-prescriptions";
+import { getPatientPrescriptionSummaries } from "@/lib/prescriptions/data";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +47,7 @@ export default async function PatientDetailsPage({
   const query = await searchParams;
   const age = calculateAge(patient.date_of_birth);
   const archiveAction = archivePatientAction.bind(null, patient.id);
-  const [dentalChart,finances,appointments] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id)]);
+  const [dentalChart,finances,appointments,prescriptions] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id),getPatientPrescriptionSummaries(patient.id)]);
   const now = new Date();
 
   return (
@@ -117,6 +120,8 @@ export default async function PatientDetailsPage({
         today={now.toISOString().slice(0,10)}
         updateAction={updateInterventionAction.bind(null,patient.id)}
       />
+
+      <PatientPrescriptions createAction={createPrescriptionAction.bind(null,patient.id)} patientActive={patient.is_active} patientId={patient.id} prescriptions={prescriptions} role={user.role} voidAction={voidPrescriptionAction.bind(null,patient.id)}/>
 
       <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6" aria-labelledby="patient-appointments-title">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900" id="patient-appointments-title">Rendez-vous</h2><p className="mt-1 text-sm text-[var(--muted)]">Derniers rendez-vous et rendez-vous à venir.</p></div>{patient.is_active?<Link className="rounded-md bg-[var(--brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)]" href={`/appointments?date=${clinicDateValue(now)}&patient=${patient.id}`}>Planifier</Link>:null}</div>

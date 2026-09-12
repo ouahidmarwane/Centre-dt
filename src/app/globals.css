@@ -30,8 +30,35 @@ body {
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
+}
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background: white;
+  }
+
+  .document-page,
+  .print-document {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
 }
 
 a {
