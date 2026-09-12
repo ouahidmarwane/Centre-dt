@@ -20,6 +20,10 @@ test("assistant permissions exclude accounting and security", () => {
   assert.equal(hasPermission("assistant", "odontogram.read"), true);
   assert.equal(hasPermission("assistant", "odontogram.write"), true);
   assert.equal(hasPermission("assistant", "odontogram.resolve"), false);
+  assert.equal(hasPermission("assistant", "interventions.write"), true);
+  assert.equal(hasPermission("assistant", "interventions.cancel"), false);
+  assert.equal(hasPermission("assistant", "payments.record"), true);
+  assert.equal(hasPermission("assistant", "payments.reverse"), false);
   assert.equal(hasPermission("assistant", "appointments.write"), true);
   assert.equal(hasPermission("assistant", "accounting.read"), false);
   assert.equal(hasPermission("assistant", "security.read"), false);
@@ -30,6 +34,8 @@ test("assistant permissions exclude accounting and security", () => {
 test("doctor permissions include protected modules", () => {
   assert.equal(hasPermission("doctor", "patients.archive"), true);
   assert.equal(hasPermission("doctor", "odontogram.resolve"), true);
+  assert.equal(hasPermission("doctor", "interventions.cancel"), true);
+  assert.equal(hasPermission("doctor", "payments.reverse"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/accounting"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/security"), true);
 });

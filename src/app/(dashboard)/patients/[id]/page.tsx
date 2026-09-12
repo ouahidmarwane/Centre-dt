@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import { archivePatientAction } from "@/app/(dashboard)/patients/actions";
 import { createDentalFindingAction, resolveDentalFindingAction, updateDentalFindingAction } from "@/app/(dashboard)/patients/[id]/odontogram-actions";
+import { cancelInterventionAction, createInterventionAction, recordPaymentAction, reversePaymentAction, updateInterventionAction } from "@/app/(dashboard)/patients/[id]/finance-actions";
+import { PatientFinances } from "@/components/finance/patient-finances";
 import { Odontogram } from "@/components/odontogram/odontogram";
 import { PageHeader } from "@/components/page-header";
 import { ArchivePatientButton } from "@/components/patients/archive-patient-button";
@@ -10,6 +12,7 @@ import { requirePermission } from "@/lib/auth/server";
 import { getPatient } from "@/lib/patients/data";
 import { calculateAge, isPatientId } from "@/lib/patients/validation";
 import { getDentalChart } from "@/lib/odontogram/data";
+import { getPatientFinances } from "@/lib/finance/data";
 import { hasPermission } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +42,8 @@ export default async function PatientDetailsPage({
   const query = await searchParams;
   const age = calculateAge(patient.date_of_birth);
   const archiveAction = archivePatientAction.bind(null, patient.id);
-  const dentalChart = await getDentalChart(patient.id);
+  const [dentalChart,finances] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id)]);
+  const now = new Date();
 
   return (
     <>
@@ -95,10 +99,27 @@ export default async function PatientDetailsPage({
         updateAction={updateDentalFindingAction.bind(null, patient.id)}
       />
 
+      <PatientFinances
+        cancelAction={cancelInterventionAction.bind(null,patient.id)}
+        createAction={createInterventionAction.bind(null,patient.id)}
+        findings={dentalChart.findings}
+        interventions={finances.interventions}
+        nowLocal={now.toISOString().slice(0,16)}
+        patientActive={patient.is_active}
+        payments={finances.payments}
+        paymentToken={crypto.randomUUID()}
+        recordAction={recordPaymentAction.bind(null,patient.id)}
+        reverseAction={reversePaymentAction.bind(null,patient.id)}
+        role={user.role}
+        summary={finances.summary}
+        today={now.toISOString().slice(0,10)}
+        updateAction={updateInterventionAction.bind(null,patient.id)}
+      />
+
       <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6">
         <h2 className="font-semibold text-slate-900">Modules cliniques à venir</h2>
         <div className="mt-4 flex flex-wrap gap-2">
-          {["Interventions", "Paiements", "Ordonnances", "Factures"].map((module) => <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-500" key={module}>{module} · À venir</span>)}
+          {["Ordonnances", "Factures"].map((module) => <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-500" key={module}>{module} · À venir</span>)}
         </div>
       </section>
 

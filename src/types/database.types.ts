@@ -205,6 +205,172 @@ export type Database = {
           },
         ]
       }
+      intervention_findings: {
+        Row: {
+          dental_finding_id: string
+          intervention_id: string
+        }
+        Insert: {
+          dental_finding_id: string
+          intervention_id: string
+        }
+        Update: {
+          dental_finding_id?: string
+          intervention_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_findings_dental_finding_id_fkey"
+            columns: ["dental_finding_id"]
+            isOneToOne: false
+            referencedRelation: "dental_findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_findings_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intervention_revisions: {
+        Row: {
+          amount_due: number
+          changed_at: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          id: string
+          intervention_id: string
+          nature: string
+          notes: string | null
+          patient_id: string
+          performed_at: string
+          status: Database["public"]["Enums"]["intervention_status"]
+        }
+        Insert: {
+          amount_due: number
+          changed_at?: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          id?: string
+          intervention_id: string
+          nature: string
+          notes?: string | null
+          patient_id: string
+          performed_at: string
+          status: Database["public"]["Enums"]["intervention_status"]
+        }
+        Update: {
+          amount_due?: number
+          changed_at?: string
+          changed_by?: string
+          changed_by_role?: Database["public"]["Enums"]["app_role"]
+          id?: string
+          intervention_id?: string
+          nature?: string
+          notes?: string | null
+          patient_id?: string
+          performed_at?: string
+          status?: Database["public"]["Enums"]["intervention_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_revisions_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_revisions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intervention_teeth: {
+        Row: {
+          intervention_id: string
+          tooth_number: number
+        }
+        Insert: {
+          intervention_id: string
+          tooth_number: number
+        }
+        Update: {
+          intervention_id?: string
+          tooth_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_teeth_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interventions: {
+        Row: {
+          amount_due: number
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string
+          id: string
+          nature: string
+          notes: string | null
+          patient_id: string
+          performed_at: string
+          status: Database["public"]["Enums"]["intervention_status"]
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          amount_due: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          nature: string
+          notes?: string | null
+          patient_id: string
+          performed_at: string
+          status: Database["public"]["Enums"]["intervention_status"]
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          amount_due?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          nature?: string
+          notes?: string | null
+          patient_id?: string
+          performed_at?: string
+          status?: Database["public"]["Enums"]["intervention_status"]
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interventions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -273,6 +439,65 @@ export type Database = {
           updated_by?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          idempotency_key: string
+          method: Database["public"]["Enums"]["payment_method"]
+          notes: string | null
+          patient_id: string
+          received_at: string
+          reference: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          id?: string
+          idempotency_key: string
+          method: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          patient_id: string
+          received_at: string
+          reference?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          patient_id?: string
+          received_at?: string
+          reference?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -376,6 +601,10 @@ export type Database = {
     }
     Functions: {
       archive_patient: { Args: { patient_id: string }; Returns: boolean }
+      cancel_intervention: {
+        Args: { target_intervention_id: string; target_patient_id: string }
+        Returns: boolean
+      }
       create_dental_finding: {
         Args: {
           target_condition: Database["public"]["Enums"]["dental_condition"]
@@ -387,8 +616,49 @@ export type Database = {
         }
         Returns: string
       }
+      create_intervention: {
+        Args: {
+          target_amount_due: number
+          target_finding_ids?: string[]
+          target_nature: string
+          target_notes?: string
+          target_patient_id: string
+          target_performed_at: string
+          target_status: Database["public"]["Enums"]["intervention_status"]
+          target_teeth?: number[]
+        }
+        Returns: string
+      }
+      get_patient_financial_summary: {
+        Args: { target_patient_id: string }
+        Returns: {
+          outstanding: number
+          total_due: number
+          total_received: number
+        }[]
+      }
+      record_payment: {
+        Args: {
+          target_amount: number
+          target_idempotency_key: string
+          target_method: Database["public"]["Enums"]["payment_method"]
+          target_notes?: string
+          target_patient_id: string
+          target_received_at: string
+          target_reference?: string
+        }
+        Returns: string
+      }
       resolve_dental_finding: {
         Args: { target_finding_id: string; target_patient_id: string }
+        Returns: boolean
+      }
+      reverse_payment: {
+        Args: {
+          target_patient_id: string
+          target_payment_id: string
+          target_reason: string
+        }
         Returns: boolean
       }
       search_patients: {
@@ -416,6 +686,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_intervention: {
+        Args: {
+          target_amount_due: number
+          target_finding_ids?: string[]
+          target_intervention_id: string
+          target_nature: string
+          target_notes?: string
+          target_patient_id: string
+          target_performed_at: string
+          target_status: Database["public"]["Enums"]["intervention_status"]
+          target_teeth?: number[]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "doctor" | "assistant"
@@ -436,6 +720,9 @@ export type Database = {
         | "resolved"
       dental_finding_status: "untreated" | "monitoring" | "treated" | "resolved"
       dentition_type: "permanent"
+      intervention_status: "planned" | "performed" | "cancelled"
+      payment_method: "cash" | "card" | "bank_transfer" | "cheque" | "other"
+      payment_status: "received" | "reversed"
       security_event_severity: "info" | "warning" | "critical"
     }
     CompositeTypes: {
@@ -584,6 +871,9 @@ export const Constants = {
       ],
       dental_finding_status: ["untreated", "monitoring", "treated", "resolved"],
       dentition_type: ["permanent"],
+      intervention_status: ["planned", "performed", "cancelled"],
+      payment_method: ["cash", "card", "bank_transfer", "cheque", "other"],
+      payment_status: ["received", "reversed"],
       security_event_severity: ["info", "warning", "critical"],
     },
   },
