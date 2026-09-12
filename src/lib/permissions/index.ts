@@ -5,6 +5,7 @@ export type AppRole = (typeof roles)[number];
 export const permissions = [
   "patients.read",
   "patients.write",
+  "patients.archive",
   "appointments.read",
   "appointments.write",
   "billing.read",

@@ -16,6 +16,7 @@ test("only supported application roles are accepted", () => {
 
 test("assistant permissions exclude accounting and security", () => {
   assert.equal(hasPermission("assistant", "patients.read"), true);
+  assert.equal(hasPermission("assistant", "patients.archive"), false);
   assert.equal(hasPermission("assistant", "appointments.write"), true);
   assert.equal(hasPermission("assistant", "accounting.read"), false);
   assert.equal(hasPermission("assistant", "security.read"), false);
@@ -24,6 +25,7 @@ test("assistant permissions exclude accounting and security", () => {
 });
 
 test("doctor permissions include protected modules", () => {
+  assert.equal(hasPermission("doctor", "patients.archive"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/accounting"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/security"), true);
 });

@@ -80,6 +80,75 @@ export type Database = {
         }
         Relationships: []
       }
+      patients: {
+        Row: {
+          address: string | null
+          allergy_notes: string | null
+          archived_at: string | null
+          created_at: string
+          created_by: string
+          date_of_birth: string | null
+          first_name: string
+          general_notes: string | null
+          has_allergies: boolean
+          has_medical_history: boolean
+          has_mutuelle: boolean
+          id: string
+          is_active: boolean
+          last_name: string
+          medical_history_notes: string | null
+          mutuelle_name: string | null
+          phone: string
+          profession: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          address?: string | null
+          allergy_notes?: string | null
+          archived_at?: string | null
+          created_at?: string
+          created_by: string
+          date_of_birth?: string | null
+          first_name: string
+          general_notes?: string | null
+          has_allergies?: boolean
+          has_medical_history?: boolean
+          has_mutuelle?: boolean
+          id?: string
+          is_active?: boolean
+          last_name: string
+          medical_history_notes?: string | null
+          mutuelle_name?: string | null
+          phone: string
+          profession?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          address?: string | null
+          allergy_notes?: string | null
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string
+          date_of_birth?: string | null
+          first_name?: string
+          general_notes?: string | null
+          has_allergies?: boolean
+          has_medical_history?: boolean
+          has_mutuelle?: boolean
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          medical_history_notes?: string | null
+          mutuelle_name?: string | null
+          phone?: string
+          profession?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -181,7 +250,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      archive_patient: { Args: { patient_id: string }; Returns: boolean }
+      search_patients: {
+        Args: { patient_status?: string; search_term?: string }
+        Returns: {
+          date_of_birth: string
+          first_name: string
+          has_mutuelle: boolean
+          id: string
+          is_active: boolean
+          last_name: string
+          mutuelle_name: string
+          phone: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       app_role: "doctor" | "assistant"

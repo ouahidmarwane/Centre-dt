@@ -1,8 +1,8 @@
 # Centre Dentaire Ouahid
 
-Plateforme interne de gestion du Centre Dentaire Ouahid. Ce premier jalon met
-en place l'authentification privée, l'autorisation et les fondations de sécurité;
-les modules métiers restent volontairement des espaces réservés.
+Plateforme interne de gestion du Centre Dentaire Ouahid. Elle réunit une
+fondation d'authentification et d'autorisation privée avec un premier module de
+gestion sécurisée des patients.
 
 ## Stack
 
@@ -54,8 +54,10 @@ revalident les claims et chargent le profil actif depuis PostgreSQL.
 
 Les rôles initiaux sont :
 
-- `doctor` : accès complet aux fondations, dont Comptabilité et Supervision ;
-- `assistant` : accès opérationnel, sans Comptabilité ni Supervision.
+- `doctor` : accès complet aux fondations, dont l'archivage patient,
+  Comptabilité et Supervision ;
+- `assistant` : accès opérationnel aux dossiers patients, sans archivage,
+  Comptabilité ni Supervision.
 
 La chaîne de contrôle est :
 
@@ -75,6 +77,26 @@ Les clients authentifiés n'ont aucun droit de modification sur `role` ou
 `is_active`. Une tentative directe avec la clé publiable est donc refusée au
 niveau PostgreSQL, indépendamment de l'interface.
 
+## Gestion des patients
+
+Le module `/patients` permet de rechercher, créer, consulter et modifier un
+dossier. L'âge n'est jamais stocké : il est calculé à partir de la date de
+naissance. La recherche est exécutée côté serveur, limitée à 100 résultats et
+ses termes ne sont pas placés dans l'URL.
+
+Le docteur et l'assistant actifs peuvent saisir et consulter les informations
+d'admission, y compris les antécédents et allergies. Cet accès clinique de
+l'assistant est volontaire pour permettre la saisie initiale au cabinet. Seul
+le docteur peut archiver un dossier. Un patient archivé reste consultable, mais
+ne peut plus être modifié par les clients. Il n'existe ni permission ni
+politique de suppression physique.
+
+`created_by`, `updated_by`, `created_at`, `updated_at`, `is_active` et
+`archived_at` sont contrôlés en base. Les événements `patient.created`,
+`patient.updated` et `patient.archived` sont écrits par trigger dans
+`audit_logs`; leurs métadonnées restent vides afin de ne dupliquer aucun nom,
+téléphone, adresse, antécédent ou allergie.
+
 ## Migrations Supabase
 
 Les migrations reproductibles sont dans `supabase/migrations/`. Elles n'ont pas
@@ -90,8 +112,8 @@ npx supabase db push
 ```
 
 Inspecter le projet et la sortie du `--dry-run` avant la dernière commande. Les
-migrations créent `profiles`, `audit_logs`, `security_events`, `blocked_ips` et
-`user_sessions`, activent RLS et appliquent des grants minimaux.
+migrations créent `profiles`, `audit_logs`, `security_events`, `blocked_ips`,
+`user_sessions` et `patients`, activent RLS et appliquent des grants minimaux.
 
 ### Premier compte docteur
 
@@ -115,7 +137,7 @@ Le fichier de types n'est pas fabriqué manuellement : il doit refléter le sch
 effectivement appliqué. Après liaison au bon projet, le générer avec :
 
 ```bash
-npx supabase gen types typescript --project-id <project-ref> --schema public > src/types/database.types.ts
+npx supabase gen types --lang typescript --linked --schema public > src/types/database.types.ts
 ```
 
 Le dossier `src/types` existe pour recevoir ce fichier.
@@ -142,9 +164,9 @@ Le dossier `src/types` existe pour recevoir ce fichier.
   génériques, aucune donnée utilisateur n'est rendue comme HTML brut et aucune
   destination de redirection fournie par le client n'est acceptée.
 
-## Limites du jalon
+## Limites actuelles
 
-Les migrations et RLS doivent encore être appliquées et testées sur un projet
-Supabase de développement. La supervision de sessions, le blocage effectif des
-requêtes, l'écriture des journaux, le rate limiting durable et les modules
-métiers seront implémentés dans des jalons ultérieurs.
+L'odontogramme, les interventions, paiements, ordonnances, factures,
+rendez-vous et rappels ne sont pas encore implémentés. La supervision de
+sessions, le blocage effectif des requêtes et le rate limiting durable restent
+également prévus pour des jalons ultérieurs.
