@@ -6,6 +6,9 @@ export const permissions = [
   "patients.read",
   "patients.write",
   "patients.archive",
+  "odontogram.read",
+  "odontogram.write",
+  "odontogram.resolve",
   "appointments.read",
   "appointments.write",
   "billing.read",
@@ -28,6 +31,8 @@ const rolePermissions: Record<AppRole, ReadonlySet<Permission>> = {
   assistant: new Set([
     "patients.read",
     "patients.write",
+    "odontogram.read",
+    "odontogram.write",
     "appointments.read",
     "appointments.write",
     "billing.read",

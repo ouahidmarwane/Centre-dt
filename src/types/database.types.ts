@@ -80,6 +80,131 @@ export type Database = {
         }
         Relationships: []
       }
+      dental_finding_revisions: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          condition: Database["public"]["Enums"]["dental_condition"]
+          dentition: Database["public"]["Enums"]["dentition_type"]
+          event_type: Database["public"]["Enums"]["dental_finding_event"]
+          finding_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          recommendation: string | null
+          status: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number: number
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          condition: Database["public"]["Enums"]["dental_condition"]
+          dentition: Database["public"]["Enums"]["dentition_type"]
+          event_type: Database["public"]["Enums"]["dental_finding_event"]
+          finding_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          recommendation?: string | null
+          status: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number: number
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          changed_by_role?: Database["public"]["Enums"]["app_role"]
+          condition?: Database["public"]["Enums"]["dental_condition"]
+          dentition?: Database["public"]["Enums"]["dentition_type"]
+          event_type?: Database["public"]["Enums"]["dental_finding_event"]
+          finding_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          recommendation?: string | null
+          status?: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dental_finding_revisions_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "dental_findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dental_finding_revisions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dental_findings: {
+        Row: {
+          condition: Database["public"]["Enums"]["dental_condition"]
+          created_at: string
+          created_by: string
+          dentition: Database["public"]["Enums"]["dentition_type"]
+          id: string
+          is_active: boolean
+          notes: string | null
+          patient_id: string
+          recommendation: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          condition: Database["public"]["Enums"]["dental_condition"]
+          created_at?: string
+          created_by: string
+          dentition?: Database["public"]["Enums"]["dentition_type"]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          patient_id: string
+          recommendation?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          condition?: Database["public"]["Enums"]["dental_condition"]
+          created_at?: string
+          created_by?: string
+          dentition?: Database["public"]["Enums"]["dentition_type"]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          patient_id?: string
+          recommendation?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["dental_finding_status"]
+          tooth_number?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dental_findings_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -251,6 +376,21 @@ export type Database = {
     }
     Functions: {
       archive_patient: { Args: { patient_id: string }; Returns: boolean }
+      create_dental_finding: {
+        Args: {
+          target_condition: Database["public"]["Enums"]["dental_condition"]
+          target_notes?: string
+          target_patient_id: string
+          target_recommendation?: string
+          target_status: Database["public"]["Enums"]["dental_finding_status"]
+          target_tooth_number: number
+        }
+        Returns: string
+      }
+      resolve_dental_finding: {
+        Args: { target_finding_id: string; target_patient_id: string }
+        Returns: boolean
+      }
       search_patients: {
         Args: { patient_status?: string; search_term?: string }
         Returns: {
@@ -265,9 +405,37 @@ export type Database = {
           updated_at: string
         }[]
       }
+      update_dental_finding: {
+        Args: {
+          target_condition: Database["public"]["Enums"]["dental_condition"]
+          target_finding_id: string
+          target_notes?: string
+          target_patient_id: string
+          target_recommendation?: string
+          target_status: Database["public"]["Enums"]["dental_finding_status"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "doctor" | "assistant"
+      dental_condition:
+        | "caries"
+        | "missing"
+        | "filled"
+        | "crown"
+        | "root_canal"
+        | "fracture"
+        | "implant"
+        | "extraction_indicated"
+        | "other"
+      dental_finding_event:
+        | "created"
+        | "updated"
+        | "status_changed"
+        | "resolved"
+      dental_finding_status: "untreated" | "monitoring" | "treated" | "resolved"
+      dentition_type: "permanent"
       security_event_severity: "info" | "warning" | "critical"
     }
     CompositeTypes: {
@@ -397,6 +565,25 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["doctor", "assistant"],
+      dental_condition: [
+        "caries",
+        "missing",
+        "filled",
+        "crown",
+        "root_canal",
+        "fracture",
+        "implant",
+        "extraction_indicated",
+        "other",
+      ],
+      dental_finding_event: [
+        "created",
+        "updated",
+        "status_changed",
+        "resolved",
+      ],
+      dental_finding_status: ["untreated", "monitoring", "treated", "resolved"],
+      dentition_type: ["permanent"],
       security_event_severity: ["info", "warning", "critical"],
     },
   },

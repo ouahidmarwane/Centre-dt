@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { archivePatientAction } from "@/app/(dashboard)/patients/actions";
+import { createDentalFindingAction, resolveDentalFindingAction, updateDentalFindingAction } from "@/app/(dashboard)/patients/[id]/odontogram-actions";
+import { Odontogram } from "@/components/odontogram/odontogram";
 import { PageHeader } from "@/components/page-header";
 import { ArchivePatientButton } from "@/components/patients/archive-patient-button";
 import { requirePermission } from "@/lib/auth/server";
 import { getPatient } from "@/lib/patients/data";
 import { calculateAge, isPatientId } from "@/lib/patients/validation";
+import { getDentalChart } from "@/lib/odontogram/data";
 import { hasPermission } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +39,7 @@ export default async function PatientDetailsPage({
   const query = await searchParams;
   const age = calculateAge(patient.date_of_birth);
   const archiveAction = archivePatientAction.bind(null, patient.id);
+  const dentalChart = await getDentalChart(patient.id);
 
   return (
     <>
@@ -81,10 +85,20 @@ export default async function PatientDetailsPage({
         </InformationSection>
       </div>
 
+      <Odontogram
+        createAction={createDentalFindingAction.bind(null, patient.id)}
+        findings={dentalChart.findings}
+        patientActive={patient.is_active}
+        resolveAction={resolveDentalFindingAction.bind(null, patient.id)}
+        revisions={dentalChart.revisions}
+        role={user.role}
+        updateAction={updateDentalFindingAction.bind(null, patient.id)}
+      />
+
       <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6">
         <h2 className="font-semibold text-slate-900">Modules cliniques à venir</h2>
         <div className="mt-4 flex flex-wrap gap-2">
-          {["Odontogramme", "Interventions", "Paiements", "Ordonnances", "Factures"].map((module) => <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-500" key={module}>{module} · À venir</span>)}
+          {["Interventions", "Paiements", "Ordonnances", "Factures"].map((module) => <span className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-500" key={module}>{module} · À venir</span>)}
         </div>
       </section>
 
