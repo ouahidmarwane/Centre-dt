@@ -14,6 +14,8 @@ import { calculateAge, isPatientId } from "@/lib/patients/validation";
 import { getDentalChart } from "@/lib/odontogram/data";
 import { getPatientFinances } from "@/lib/finance/data";
 import { hasPermission } from "@/lib/permissions";
+import { getPatientAppointments } from "@/lib/appointments/data";
+import { clinicDateValue, formatClinicDate, formatClinicTime } from "@/lib/appointments/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +44,7 @@ export default async function PatientDetailsPage({
   const query = await searchParams;
   const age = calculateAge(patient.date_of_birth);
   const archiveAction = archivePatientAction.bind(null, patient.id);
-  const [dentalChart,finances] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id)]);
+  const [dentalChart,finances,appointments] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id)]);
   const now = new Date();
 
   return (
@@ -115,6 +117,11 @@ export default async function PatientDetailsPage({
         today={now.toISOString().slice(0,10)}
         updateAction={updateInterventionAction.bind(null,patient.id)}
       />
+
+      <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6" aria-labelledby="patient-appointments-title">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900" id="patient-appointments-title">Rendez-vous</h2><p className="mt-1 text-sm text-[var(--muted)]">Derniers rendez-vous et rendez-vous à venir.</p></div>{patient.is_active?<Link className="rounded-md bg-[var(--brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)]" href={`/appointments?date=${clinicDateValue(now)}&patient=${patient.id}`}>Planifier</Link>:null}</div>
+        <div className="mt-4 grid gap-3">{appointments.map(appointment=><article className="rounded-md border border-slate-200 px-4 py-3" key={appointment.id}><div className="flex flex-wrap justify-between gap-2"><p className="font-medium text-slate-900">{appointment.title}</p><span className="text-xs font-semibold text-slate-600">{appointment.status==="scheduled"?"Planifié":appointment.status==="completed"?"Terminé":appointment.status==="cancelled"?"Annulé":"Absent"}</span></div><p className="mt-1 text-sm text-[var(--muted)]">{formatClinicDate(appointment.starts_at)} · {formatClinicTime(appointment.starts_at)}–{formatClinicTime(appointment.ends_at)}</p></article>)}{!appointments.length?<p className="rounded-md bg-slate-50 px-4 py-3 text-sm text-[var(--muted)]">Aucun rendez-vous enregistré.</p>:null}</div>
+      </section>
 
       <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6">
         <h2 className="font-semibold text-slate-900">Modules cliniques à venir</h2>

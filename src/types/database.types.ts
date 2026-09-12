@@ -14,6 +14,163 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_reminders: {
+        Row: {
+          appointment_id: string
+          handled_at: string
+          handled_by: string
+          id: string
+          reminder_type: Database["public"]["Enums"]["appointment_reminder_type"]
+        }
+        Insert: {
+          appointment_id: string
+          handled_at?: string
+          handled_by: string
+          id?: string
+          reminder_type: Database["public"]["Enums"]["appointment_reminder_type"]
+        }
+        Update: {
+          appointment_id?: string
+          handled_at?: string
+          handled_by?: string
+          id?: string
+          reminder_type?: Database["public"]["Enums"]["appointment_reminder_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_revisions: {
+        Row: {
+          appointment_id: string
+          changed_at: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          ends_at: string
+          id: string
+          notes: string | null
+          patient_id: string
+          purpose: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          title: string
+        }
+        Insert: {
+          appointment_id: string
+          changed_at?: string
+          changed_by: string
+          changed_by_role: Database["public"]["Enums"]["app_role"]
+          ends_at: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          purpose?: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          title: string
+        }
+        Update: {
+          appointment_id?: string
+          changed_at?: string
+          changed_by?: string
+          changed_by_role?: Database["public"]["Enums"]["app_role"]
+          ends_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          purpose?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_revisions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_revisions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          idempotency_key: string
+          notes: string | null
+          patient_id: string
+          purpose: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          title: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by: string
+          ends_at: string
+          id?: string
+          idempotency_key: string
+          notes?: string | null
+          patient_id: string
+          purpose?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          title: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string
+          ends_at?: string
+          id?: string
+          idempotency_key?: string
+          notes?: string | null
+          patient_id?: string
+          purpose?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          title?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -601,9 +758,29 @@ export type Database = {
     }
     Functions: {
       archive_patient: { Args: { patient_id: string }; Returns: boolean }
+      cancel_appointment: {
+        Args: {
+          target_appointment_id: string
+          target_patient_id: string
+          target_reason: string
+        }
+        Returns: boolean
+      }
       cancel_intervention: {
         Args: { target_intervention_id: string; target_patient_id: string }
         Returns: boolean
+      }
+      create_appointment: {
+        Args: {
+          target_ends_at: string
+          target_idempotency_key: string
+          target_notes: string
+          target_patient_id: string
+          target_purpose: string
+          target_starts_at: string
+          target_title: string
+        }
+        Returns: string
       }
       create_dental_finding: {
         Args: {
@@ -629,6 +806,17 @@ export type Database = {
         }
         Returns: string
       }
+      get_due_appointment_reminders: {
+        Args: { reference_time?: string }
+        Returns: {
+          appointment_id: string
+          patient_first_name: string
+          patient_id: string
+          patient_phone: string
+          reminder_type: Database["public"]["Enums"]["appointment_reminder_type"]
+          starts_at: string
+        }[]
+      }
       get_patient_financial_summary: {
         Args: { target_patient_id: string }
         Returns: {
@@ -636,6 +824,14 @@ export type Database = {
           total_due: number
           total_received: number
         }[]
+      }
+      mark_appointment_reminder_handled: {
+        Args: {
+          target_appointment_id: string
+          target_patient_id: string
+          target_type: Database["public"]["Enums"]["appointment_reminder_type"]
+        }
+        Returns: boolean
       }
       record_payment: {
         Args: {
@@ -675,6 +871,26 @@ export type Database = {
           updated_at: string
         }[]
       }
+      set_appointment_status: {
+        Args: {
+          target_appointment_id: string
+          target_patient_id: string
+          target_status: Database["public"]["Enums"]["appointment_status"]
+        }
+        Returns: boolean
+      }
+      update_appointment: {
+        Args: {
+          target_appointment_id: string
+          target_ends_at: string
+          target_notes: string
+          target_patient_id: string
+          target_purpose: string
+          target_starts_at: string
+          target_title: string
+        }
+        Returns: boolean
+      }
       update_dental_finding: {
         Args: {
           target_condition: Database["public"]["Enums"]["dental_condition"]
@@ -703,6 +919,8 @@ export type Database = {
     }
     Enums: {
       app_role: "doctor" | "assistant"
+      appointment_reminder_type: "day_before" | "two_hours_before"
+      appointment_status: "scheduled" | "completed" | "cancelled" | "no_show"
       dental_condition:
         | "caries"
         | "missing"
@@ -852,6 +1070,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["doctor", "assistant"],
+      appointment_reminder_type: ["day_before", "two_hours_before"],
+      appointment_status: ["scheduled", "completed", "cancelled", "no_show"],
       dental_condition: [
         "caries",
         "missing",
