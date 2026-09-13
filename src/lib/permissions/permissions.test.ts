@@ -32,6 +32,13 @@ test("assistant permissions exclude accounting and security", () => {
   assert.equal(hasPermission("assistant", "prescriptions.print"), true);
   assert.equal(hasPermission("assistant", "prescriptions.create"), false);
   assert.equal(hasPermission("assistant", "prescriptions.void"), false);
+  assert.equal(hasPermission("assistant", "invoices.read"), true);
+  assert.equal(hasPermission("assistant", "invoices.print"), true);
+  assert.equal(hasPermission("assistant", "invoices.create"), false);
+  assert.equal(hasPermission("assistant", "invoices.void"), false);
+  assert.equal(hasPermission("assistant", "receipts.read"), true);
+  assert.equal(hasPermission("assistant", "receipts.create"), true);
+  assert.equal(hasPermission("assistant", "receipts.print"), true);
   assert.equal(hasPermission("assistant", "accounting.read"), false);
   assert.equal(hasPermission("assistant", "security.read"), false);
   assert.equal(canAccessDoctorRoute("assistant", "/accounting"), false);
@@ -45,6 +52,9 @@ test("doctor permissions include protected modules", () => {
   assert.equal(hasPermission("doctor", "payments.reverse"), true);
   assert.equal(hasPermission("doctor", "prescriptions.create"), true);
   assert.equal(hasPermission("doctor", "prescriptions.void"), true);
+  assert.equal(hasPermission("doctor", "invoices.create"), true);
+  assert.equal(hasPermission("doctor", "invoices.void"), true);
+  assert.equal(hasPermission("doctor", "receipts.create"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/accounting"), true);
   assert.equal(canAccessDoctorRoute("doctor", "/security"), true);
 });

@@ -528,6 +528,128 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description_snapshot: string
+          id: string
+          intervention_id: string
+          invoice_id: string
+          line_total: number
+          position: number
+          quantity: number
+          unit_amount: number
+        }
+        Insert: {
+          created_at?: string
+          description_snapshot: string
+          id?: string
+          intervention_id: string
+          invoice_id: string
+          line_total: number
+          position: number
+          quantity?: number
+          unit_amount: number
+        }
+        Update: {
+          created_at?: string
+          description_snapshot?: string
+          id?: string
+          intervention_id?: string
+          invoice_id?: string
+          line_total?: number
+          position?: number
+          quantity?: number
+          unit_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          clinic_name_snapshot: string
+          created_at: string
+          id: string
+          idempotency_key: string
+          invoice_number: string
+          issued_at: string
+          issued_by: string
+          issuer_name_snapshot: string
+          patient_address_snapshot: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          total: number
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          clinic_name_snapshot?: string
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          invoice_number: string
+          issued_at?: string
+          issued_by: string
+          issuer_name_snapshot: string
+          patient_address_snapshot?: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          total: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          clinic_name_snapshot?: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          invoice_number?: string
+          issued_at?: string
+          issued_by?: string
+          issuer_name_snapshot?: string
+          patient_address_snapshot?: string | null
+          patient_first_name_snapshot?: string
+          patient_id?: string
+          patient_last_name_snapshot?: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          total?: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -596,6 +718,78 @@ export type Database = {
           updated_by?: string
         }
         Relationships: []
+      }
+      payment_receipts: {
+        Row: {
+          amount_snapshot: number
+          clinic_name_snapshot: string
+          created_at: string
+          id: string
+          idempotency_key: string
+          issued_at: string
+          issued_by: string
+          issuer_name_snapshot: string
+          patient_address_snapshot: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          payment_id: string
+          payment_method_snapshot: Database["public"]["Enums"]["payment_method"]
+          payment_received_at_snapshot: string
+          receipt_number: string
+        }
+        Insert: {
+          amount_snapshot: number
+          clinic_name_snapshot?: string
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          issued_at?: string
+          issued_by: string
+          issuer_name_snapshot: string
+          patient_address_snapshot?: string | null
+          patient_first_name_snapshot: string
+          patient_id: string
+          patient_last_name_snapshot: string
+          payment_id: string
+          payment_method_snapshot: Database["public"]["Enums"]["payment_method"]
+          payment_received_at_snapshot: string
+          receipt_number: string
+        }
+        Update: {
+          amount_snapshot?: number
+          clinic_name_snapshot?: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          issued_at?: string
+          issued_by?: string
+          issuer_name_snapshot?: string
+          patient_address_snapshot?: string | null
+          patient_first_name_snapshot?: string
+          patient_id?: string
+          patient_last_name_snapshot?: string
+          payment_id?: string
+          payment_method_snapshot?: Database["public"]["Enums"]["payment_method"]
+          payment_received_at_snapshot?: string
+          receipt_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -915,6 +1109,22 @@ export type Database = {
         }
         Returns: string
       }
+      create_invoice: {
+        Args: {
+          target_idempotency_key: string
+          target_intervention_ids: string[]
+          target_patient_id: string
+        }
+        Returns: string
+      }
+      create_payment_receipt: {
+        Args: {
+          target_idempotency_key: string
+          target_patient_id: string
+          target_payment_id: string
+        }
+        Returns: string
+      }
       create_prescription: {
         Args: {
           target_items: Json
@@ -1033,6 +1243,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      void_invoice: {
+        Args: {
+          target_invoice_id: string
+          target_patient_id: string
+          target_reason: string
+        }
+        Returns: boolean
+      }
       void_prescription: {
         Args: {
           target_patient_id: string
@@ -1064,6 +1282,7 @@ export type Database = {
       dental_finding_status: "untreated" | "monitoring" | "treated" | "resolved"
       dentition_type: "permanent"
       intervention_status: "planned" | "performed" | "cancelled"
+      invoice_status: "active" | "voided"
       payment_method: "cash" | "card" | "bank_transfer" | "cheque" | "other"
       payment_status: "received" | "reversed"
       prescription_status: "active" | "voided"
@@ -1218,6 +1437,7 @@ export const Constants = {
       dental_finding_status: ["untreated", "monitoring", "treated", "resolved"],
       dentition_type: ["permanent"],
       intervention_status: ["planned", "performed", "cancelled"],
+      invoice_status: ["active", "voided"],
       payment_method: ["cash", "card", "bank_transfer", "cheque", "other"],
       payment_status: ["received", "reversed"],
       prescription_status: ["active", "voided"],
