@@ -1133,6 +1133,24 @@ export type Database = {
         }
         Returns: string
       }
+      get_accounting_dashboard: {
+        Args: {
+          target_bucket: string
+          target_end_date: string
+          target_start_date: string
+        }
+        Returns: {
+          active_patient_count: number
+          current_outstanding: number
+          intervention_count: number
+          payment_count: number
+          payment_methods: Json
+          period_net: number
+          production: number
+          received: number
+          series: Json
+        }[]
+      }
       get_due_appointment_reminders: {
         Args: { reference_time?: string }
         Returns: {

@@ -1,19 +1,27 @@
-import { PageHeader, PlaceholderPanel } from "@/components/page-header";
+import { AccountingDashboard } from "@/components/accounting/accounting-dashboard";
+import { PageHeader } from "@/components/page-header";
+import { getAccountingDashboard } from "@/lib/accounting/data";
+import { resolveAccountingPeriod } from "@/lib/accounting/periods";
 import { requirePermission } from "@/lib/auth/server";
 
-export default async function AccountingPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function AccountingPage({ searchParams }: { searchParams: SearchParams }) {
   await requirePermission("accounting.read");
+  const period = resolveAccountingPeriod(await searchParams);
+  const dashboard = await getAccountingDashboard(period.startDate, period.endDate, period.bucket);
 
   return (
     <>
       <PageHeader
-        description="Cet espace est réservé au docteur. Les fonctions comptables seront ajoutées ultérieurement."
+        description="Vue agrégée doctor-only de la production, des encaissements et de l’encours du cabinet."
         eyebrow="Accès docteur"
-        title="Comptabilité"
+        title="Pilotage financier"
       />
-      <PlaceholderPanel>
-        <p className="text-sm text-[var(--muted)]">Module protégé en préparation.</p>
-      </PlaceholderPanel>
+      <AccountingDashboard data={dashboard} period={period} />
     </>
   );
 }
