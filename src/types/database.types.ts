@@ -1117,6 +1117,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_ip_policy: {
+        Args: {
+          target_expires_at: string
+          target_ip: unknown
+          target_reason: string
+        }
+        Returns: string
+      }
       create_payment_receipt: {
         Args: {
           target_idempotency_key: string
@@ -1132,6 +1140,10 @@ export type Database = {
           target_patient_id: string
         }
         Returns: string
+      }
+      disable_ip_policy: {
+        Args: { target_policy_id: string }
+        Returns: boolean
       }
       get_accounting_dashboard: {
         Args: {
@@ -1170,6 +1182,7 @@ export type Database = {
           total_received: number
         }[]
       }
+      get_security_center: { Args: { reference_time?: string }; Returns: Json }
       mark_appointment_reminder_handled: {
         Args: {
           target_appointment_id: string
@@ -1178,6 +1191,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      observe_current_session: { Args: never; Returns: undefined }
+      record_inactive_account_denied: { Args: never; Returns: undefined }
+      record_logout: { Args: never; Returns: undefined }
       record_payment: {
         Args: {
           target_amount: number
@@ -1222,6 +1238,10 @@ export type Database = {
           target_patient_id: string
           target_status: Database["public"]["Enums"]["appointment_status"]
         }
+        Returns: boolean
+      }
+      set_user_active: {
+        Args: { target_active: boolean; target_user_id: string }
         Returns: boolean
       }
       update_appointment: {

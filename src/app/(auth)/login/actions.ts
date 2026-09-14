@@ -40,9 +40,14 @@ export async function loginAction(
       .maybeSingle();
 
     if (profileError || !profile?.is_active) {
+      if (!profileError && profile?.is_active === false) {
+        await supabase.rpc("record_inactive_account_denied");
+      }
       await supabase.auth.signOut({ scope: "local" });
       return { error: genericLoginError };
     }
+
+    await supabase.rpc("observe_current_session");
   } catch {
     return { error: genericLoginError };
   }
