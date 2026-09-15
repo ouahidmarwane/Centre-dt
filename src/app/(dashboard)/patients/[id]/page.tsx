@@ -55,6 +55,7 @@ export default async function PatientDetailsPage({
   const [dentalChart,finances,appointments,prescriptions,financialDocuments] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id),getPatientPrescriptionSummaries(patient.id),getPatientFinancialDocuments(patient.id)]);
   const now = new Date();
   const interventionToken = crypto.randomUUID();
+  const prescriptionToken = crypto.randomUUID();
   const receiptTokens = Object.fromEntries(finances.payments.map((payment) => [payment.id, crypto.randomUUID()]));
 
   return (
@@ -147,7 +148,7 @@ export default async function PatientDetailsPage({
         updateAction={updateInterventionAction.bind(null,patient.id)}
       />
 
-      <PatientPrescriptions createAction={createPrescriptionAction.bind(null,patient.id)} patientActive={patient.is_active} patientId={patient.id} prescriptions={prescriptions} role={user.role} voidAction={voidPrescriptionAction.bind(null,patient.id)}/>
+      <PatientPrescriptions createAction={createPrescriptionAction.bind(null,patient.id)} patientActive={patient.is_active} patientId={patient.id} prescriptionToken={prescriptionToken} prescriptions={prescriptions} role={user.role} voidAction={voidPrescriptionAction.bind(null,patient.id)}/>
 
       <FinancialDocuments
         activeInvoicedInterventionIds={financialDocuments.activeInvoicedInterventionIds}

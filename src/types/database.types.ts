@@ -906,6 +906,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          idempotency_key: string
           issued_at: string
           notes: string | null
           patient_date_of_birth_snapshot: string | null
@@ -923,6 +924,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          idempotency_key: string
           issued_at?: string
           notes?: string | null
           patient_date_of_birth_snapshot?: string | null
@@ -940,6 +942,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          idempotency_key?: string
           issued_at?: string
           notes?: string | null
           patient_date_of_birth_snapshot?: string | null
@@ -1151,14 +1154,24 @@ export type Database = {
         }
         Returns: string
       }
-      create_prescription: {
-        Args: {
-          target_items: Json
-          target_notes: string
-          target_patient_id: string
-        }
-        Returns: string
-      }
+      create_prescription:
+        | {
+            Args: {
+              target_items: Json
+              target_notes: string
+              target_patient_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              target_idempotency_key: string
+              target_items: Json
+              target_notes: string
+              target_patient_id: string
+            }
+            Returns: string
+          }
       disable_ip_policy: {
         Args: { target_policy_id: string }
         Returns: boolean
