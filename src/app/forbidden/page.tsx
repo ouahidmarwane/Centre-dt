@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/app/(dashboard)/actions";
+import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 
 export default function ForbiddenPage() {
   return (
@@ -21,12 +22,7 @@ export default function ForbiddenPage() {
           Retour au tableau de bord
         </Link>
         <form action={logoutAction} className="mt-3">
-          <button
-            className="text-sm font-semibold text-[var(--muted)] underline decoration-slate-300 underline-offset-4"
-            type="submit"
-          >
-            Se déconnecter
-          </button>
+          <PendingSubmitButton className="min-h-11 px-3 text-sm font-semibold text-[var(--muted)] underline decoration-slate-300 underline-offset-4 disabled:opacity-60" pendingLabel="Déconnexion…">Se déconnecter</PendingSubmitButton>
         </form>
       </section>
     </main>

@@ -39,6 +39,10 @@ export function clinicTimeValue(date:Date){
   const parts=zonedParts(date); return `${parts.hour}:${parts.minute}`;
 }
 
+export function clinicDateTimeValue(date:Date){
+  return `${clinicDateValue(date)}T${clinicTimeValue(date)}`;
+}
+
 export function formatClinicDate(value:string|Date){return new Intl.DateTimeFormat("fr-FR",{timeZone:CLINIC_TIME_ZONE,dateStyle:"full"}).format(new Date(value));}
 export function formatClinicTime(value:string|Date){return new Intl.DateTimeFormat("fr-FR",{timeZone:CLINIC_TIME_ZONE,hour:"2-digit",minute:"2-digit"}).format(new Date(value));}
 export function isUuid(value:unknown):value is string{return typeof value==="string"&&uuid.test(value);}

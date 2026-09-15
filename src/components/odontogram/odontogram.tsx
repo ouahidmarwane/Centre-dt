@@ -1,112 +1,49 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useState } from "react";
 
 import type { DentalActionState } from "@/app/(dashboard)/patients/[id]/odontogram-actions";
+import { StatusPill } from "@/components/ui/clinic-ui";
+import { FormField } from "@/components/ui/form-field";
+import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 import type { DentalFinding, DentalRevision } from "@/lib/odontogram/data";
-import {
-  conditionLabels,
-  dentalConditions,
-  editableDentalStatuses,
-  statusLabels,
-  toothQuadrants,
-  type DentalStatus,
-  type PermanentTooth,
-} from "@/lib/odontogram/validation";
+import { conditionLabels, dentalConditions, editableDentalStatuses, statusLabels, toothQuadrants, type DentalStatus, type PermanentTooth } from "@/lib/odontogram/validation";
 import type { AppRole } from "@/lib/permissions";
 
-type Props = {
-  patientActive: boolean;
-  role: AppRole;
-  findings: DentalFinding[];
-  revisions: DentalRevision[];
-  createAction: (state: DentalActionState, formData: FormData) => Promise<DentalActionState>;
-  updateAction: (findingId: string, state: DentalActionState, formData: FormData) => Promise<DentalActionState>;
-  resolveAction: (findingId: string) => Promise<void>;
-};
+type Props = { patientActive:boolean; role:AppRole; findings:DentalFinding[]; revisions:DentalRevision[]; createAction:(state:DentalActionState,formData:FormData)=>Promise<DentalActionState>; updateAction:(findingId:string,state:DentalActionState,formData:FormData)=>Promise<DentalActionState>; resolveAction:(findingId:string)=>Promise<void> };
+const initialState:DentalActionState={success:false,message:null,fieldErrors:{}};
+const eventLabels={created:"Créée",updated:"Modifiée",status_changed:"Statut modifié",resolved:"Résolue"} as const;
+const statusCodes:Record<DentalStatus,string>={untreated:"À traiter",monitoring:"Surveillance",treated:"Traitée",resolved:"Historique"};
 
-const initialState: DentalActionState = { success: false, message: null, fieldErrors: {} };
-const eventLabels = { created: "Créée", updated: "Modifiée", status_changed: "Statut modifié", resolved: "Résolue" } as const;
-const statusCodes: Record<DentalStatus, string> = { untreated: "NT", monitoring: "SURV", treated: "TR", resolved: "RÉS" };
-
-export function Odontogram({ patientActive, role, findings, revisions, createAction, updateAction, resolveAction }: Props) {
-  const initialTooth = (findings[0]?.tooth_number ?? 16) as PermanentTooth;
-  const [selectedTooth, setSelectedTooth] = useState<PermanentTooth>(initialTooth);
-  const selectedFindings = findings.filter((finding) => finding.tooth_number === selectedTooth);
-  const selectedHistory = revisions.filter((revision) => revision.tooth_number === selectedTooth);
-
-  return (
-    <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6" aria-labelledby="odontogram-title">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 className="font-semibold text-slate-900" id="odontogram-title">Odontogramme</h2><p className="mt-1 text-sm text-[var(--muted)]">Dentition permanente · numérotation FDI</p></div>
-        <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">{findings.length} constatation{findings.length === 1 ? "" : "s"} active{findings.length === 1 ? "" : "s"}</span>
-      </div>
-      {!patientActive ? <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Lecture seule : ce dossier patient est archivé.</p> : null}
-
-      <div className="mt-6 overflow-x-auto pb-2">
-        <div className="mx-auto grid min-w-[720px] gap-4" aria-label="Arcades dentaires">
-          <DentalRow quadrants={[toothQuadrants[0], toothQuadrants[1]]} selected={selectedTooth} findings={findings} onSelect={setSelectedTooth} />
-          <div className="mx-auto h-px w-3/4 bg-slate-200" />
-          <DentalRow quadrants={[toothQuadrants[2], toothQuadrants[3]]} selected={selectedTooth} findings={findings} onSelect={setSelectedTooth} />
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-6 border-t border-[var(--border)] pt-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,.65fr)]">
-        <div>
-          <h3 className="font-semibold text-slate-900">Dent {selectedTooth}</h3>
-          <div className="mt-4 space-y-4">
-            {selectedFindings.map((finding) => (
-              <FindingEditor key={finding.id} finding={finding} patientActive={patientActive} role={role} updateAction={updateAction.bind(null, finding.id)} resolveAction={resolveAction.bind(null, finding.id)} />
-            ))}
-            {selectedFindings.length === 0 ? <p className="rounded-md bg-slate-50 px-4 py-3 text-sm text-[var(--muted)]">Aucune constatation active pour cette dent.</p> : null}
-          </div>
-          {patientActive ? <NewFindingForm key={selectedTooth} tooth={selectedTooth} role={role} action={createAction} /> : null}
-        </div>
-        <div>
-          <h3 className="font-semibold text-slate-900">Historique clinique</h3>
-          <ol className="mt-4 space-y-3">
-            {selectedHistory.map((revision) => (
-              <li className="border-l-2 border-teal-200 pl-3 text-sm" key={revision.id}>
-                <p className="font-medium text-slate-800">{eventLabels[revision.event_type]} · {conditionLabels[revision.condition]}</p>
-                <p className="text-[var(--muted)]">{statusLabels[revision.status]} · {revision.changed_by_role === "doctor" ? "Médecin" : "Assistant"}</p>
-                <time className="text-xs text-slate-500" dateTime={revision.changed_at}>{new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(revision.changed_at))}</time>
-              </li>
-            ))}
-            {selectedHistory.length === 0 ? <li className="text-sm text-[var(--muted)]">Aucun historique pour cette dent.</li> : null}
-          </ol>
-        </div>
-      </div>
-    </section>
-  );
+export function Odontogram({patientActive,role,findings,revisions,createAction,updateAction,resolveAction}:Props){
+  const initialTooth=(findings[0]?.tooth_number??16) as PermanentTooth;
+  const[selectedTooth,setSelectedTooth]=useState<PermanentTooth>(initialTooth);
+  const selectedFindings=findings.filter(finding=>finding.tooth_number===selectedTooth);
+  const selectedHistory=revisions.filter(revision=>revision.tooth_number===selectedTooth);
+  return <section className="clinic-bento mt-6 !p-0" aria-labelledby="odontogram-title">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200/80 px-5 py-5 sm:px-7"><div><p className="text-[10px] font-bold tracking-[.18em] text-[var(--brand)] uppercase">Carte dentaire</p><h2 className="mt-1 text-xl font-bold tracking-[-.025em] text-[var(--navy)]" id="odontogram-title">Odontogramme permanent</h2><p className="mt-1 text-sm text-[var(--muted)]">Sélectionnez une dent sur les arcades · numérotation FDI</p></div><StatusPill tone={findings.length?"gold":"green"}>{findings.length?`${findings.length} constatation${findings.length===1?"":"s"} active${findings.length===1?"":"s"}`:"✓ Aucune constatation active"}</StatusPill></div>
+    {!patientActive?<p className="mx-5 mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 sm:mx-7">Lecture seule : ce dossier patient est archivé.</p>:null}
+    <div className="mx-3 mt-5 overflow-x-auto rounded-[22px] bg-[linear-gradient(155deg,#f8fbff,#edf6ff)] px-3 py-6 ring-1 ring-inset ring-blue-100/70 sm:mx-7 sm:px-6"><div className="mx-auto min-w-[760px] max-w-5xl" aria-label="Arcades dentaires"><div className="mb-3 flex items-center justify-between px-8 text-[10px] font-bold tracking-[.14em] text-slate-400 uppercase"><span>Côté droit du patient</span><span>Arcade supérieure</span><span>Côté gauche du patient</span></div><DentalRow quadrants={[toothQuadrants[0],toothQuadrants[1]]} selected={selectedTooth} findings={findings} onSelect={setSelectedTooth} arch="upper"/><div className="my-4 flex items-center gap-4 px-12" aria-hidden="true"><span className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-200 to-blue-300"/><span className="rounded-full bg-white px-3 py-1 text-[9px] font-bold tracking-[.16em] text-blue-500 shadow-sm">PLAN OCCLUSAL</span><span className="h-px flex-1 bg-gradient-to-r from-blue-300 via-blue-200 to-transparent"/></div><DentalRow quadrants={[toothQuadrants[2],toothQuadrants[3]]} selected={selectedTooth} findings={findings} onSelect={setSelectedTooth} arch="lower"/><p className="mt-3 text-center text-[10px] font-bold tracking-[.14em] text-slate-400 uppercase">Arcade inférieure</p></div></div>
+    <div className="grid gap-4 p-5 sm:p-7 xl:grid-cols-[220px_minmax(0,1.1fr)_minmax(260px,.75fr)]">
+      <aside className="relative overflow-hidden rounded-[22px] bg-[var(--navy)] p-5 text-white"><p className="text-[10px] font-bold tracking-[.16em] text-blue-200 uppercase">Dent sélectionnée</p><p className="mt-2 text-5xl font-black tracking-[-.06em]">{selectedTooth}</p><p className="mt-2 text-sm text-blue-100">{toothName(selectedTooth)}</p><div className="mt-7 flex h-32 items-center justify-center rounded-[20px] bg-white/10 ring-1 ring-inset ring-white/15"><Image alt="" aria-hidden="true" className="h-24 w-20 object-contain brightness-0 invert" height={110} src={`/assets/dentist-app/tooth-${selectedTooth}.svg`} width={90}/></div><div className="mt-5 flex items-center gap-2 text-xs text-blue-100"><span className="size-2 rounded-full bg-[var(--gold)]"/>{selectedFindings.length?`${selectedFindings.length} constatation${selectedFindings.length>1?"s":""}`:"Aucune constatation"}</div></aside>
+      <div className="min-w-0 rounded-[22px] border border-slate-200 bg-white p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-bold tracking-[.14em] text-slate-400 uppercase">Situation actuelle</p><h3 className="mt-1 font-bold text-[var(--navy)]">Constatations actives</h3></div><StatusPill tone={selectedFindings.length?"gold":"green"}>{selectedFindings.length||"RAS"}</StatusPill></div><div className="mt-4 space-y-4">{selectedFindings.map(finding=><FindingEditor key={finding.id} finding={finding} patientActive={patientActive} role={role} updateAction={updateAction.bind(null,finding.id)} resolveAction={resolveAction.bind(null,finding.id)}/>) }{!selectedFindings.length?<div className="grid min-h-32 place-items-center rounded-[18px] border border-dashed border-blue-200 bg-blue-50/45 px-4 text-center"><div><span className="mx-auto grid size-9 place-items-center rounded-full bg-white text-blue-600 shadow-sm">✓</span><p className="mt-3 text-sm font-semibold text-slate-700">Aucune constatation active</p><p className="mt-1 text-xs text-slate-500">La dent {selectedTooth} ne nécessite aucun suivi enregistré.</p></div></div>:null}</div></div>
+      <aside className="rounded-[22px] border border-slate-200 bg-slate-50/65 p-4 sm:p-5"><p className="text-[10px] font-bold tracking-[.14em] text-slate-400 uppercase">Traçabilité</p><h3 className="mt-1 font-bold text-[var(--navy)]">Historique clinique</h3><ol className="mt-5 space-y-4">{selectedHistory.map(revision=><li className="relative border-l border-blue-200 pl-4 text-sm before:absolute before:-left-[5px] before:top-1 before:size-2.5 before:rounded-full before:border-2 before:border-white before:bg-[var(--brand)]" key={revision.id}><p className="font-semibold text-slate-800">{eventLabels[revision.event_type]} · {conditionLabels[revision.condition]}</p><p className="mt-1 text-xs text-[var(--muted)]">{statusLabels[revision.status]} · {revision.changed_by_role==="doctor"?"Médecin":"Assistant"}</p><time className="mt-1 block text-[10px] text-slate-400" dateTime={revision.changed_at}>{new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Casablanca"}).format(new Date(revision.changed_at))}</time></li>)}{!selectedHistory.length?<li className="rounded-2xl bg-white px-4 py-5 text-center text-xs text-[var(--muted)] ring-1 ring-inset ring-slate-200">Aucun historique pour cette dent.</li>:null}</ol></aside>
+    </div>
+    {patientActive?<div className="border-t border-slate-200/80 p-5 sm:p-7"><NewFindingForm key={selectedTooth} tooth={selectedTooth} role={role} action={createAction}/></div>:null}
+  </section>;
 }
 
-function DentalRow({ quadrants, selected, findings, onSelect }: { quadrants: readonly [readonly PermanentTooth[], readonly PermanentTooth[]]; selected: PermanentTooth; findings: DentalFinding[]; onSelect: (tooth: PermanentTooth) => void }) {
-  return <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3"><div className="flex justify-end gap-1.5">{quadrants[0].map(renderTooth)}</div><span aria-hidden="true" className="mb-7 h-10 w-px bg-slate-300" /><div className="flex gap-1.5">{quadrants[1].map(renderTooth)}</div></div>;
-  function renderTooth(tooth: PermanentTooth) {
-    const toothFindings = findings.filter((finding) => finding.tooth_number === tooth);
-    const statuses = [...new Set(toothFindings.map((finding) => statusLabels[finding.status]))];
-    const codes = [...new Set(toothFindings.map((finding) => statusCodes[finding.status]))];
-    const label = `Dent ${tooth}${toothFindings.length ? ` — ${toothFindings.length} constatation(s) — ${statuses.join(", ")}` : " — aucune constatation"}`;
-    return <button aria-label={label} aria-pressed={selected === tooth} className={`group flex w-10 flex-col items-center gap-1 rounded-md px-0.5 py-1 transition ${selected === tooth ? "bg-[var(--brand-soft)]" : "hover:bg-slate-50"}`} key={tooth} onClick={() => onSelect(tooth)} type="button"><span className={`relative h-12 w-8 rounded-[45%_45%_35%_35%] border-2 ${toothFindings.length ? "border-amber-500 bg-amber-50" : "border-slate-300 bg-white"}`} aria-hidden="true">{toothFindings.length ? <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-amber-600 text-[10px] font-bold text-white">{toothFindings.length}</span> : null}</span><span className="text-xs font-semibold text-slate-700">{tooth}</span><span className="h-3 text-[8px] font-bold tracking-tight text-slate-600" aria-hidden="true">{codes.join("/")}</span></button>;
-  }
+function DentalRow({quadrants,selected,findings,onSelect,arch}:{quadrants:readonly[readonly PermanentTooth[],readonly PermanentTooth[]];selected:PermanentTooth;findings:DentalFinding[];onSelect:(tooth:PermanentTooth)=>void;arch:"upper"|"lower"}){
+  return <div className={`grid grid-cols-[1fr_auto_1fr] gap-2 ${arch==="upper"?"items-end":"items-start"}`}><div className="flex justify-end gap-1">{quadrants[0].map(renderTooth)}</div><span aria-hidden="true" className="h-24 w-px bg-blue-200"/><div className="flex gap-1">{quadrants[1].map(renderTooth)}</div></div>;
+  function renderTooth(tooth:PermanentTooth){const toothFindings=findings.filter(finding=>finding.tooth_number===tooth);const principal=toothFindings.find(item=>item.status==="untreated")?.status??toothFindings.find(item=>item.status==="monitoring")?.status??toothFindings[0]?.status;const label=`Dent ${tooth} — ${toothName(tooth)} — ${toothFindings.length?`${toothFindings.length} constatation(s), ${[...new Set(toothFindings.map(item=>statusCodes[item.status]))].join(", ")}`:"aucune constatation active"}`;return <button aria-label={label} aria-pressed={selected===tooth} className={`group relative flex min-h-24 w-11 flex-col items-center justify-between rounded-2xl px-1 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md focus-visible:z-10 ${selected===tooth?"bg-white shadow-[0_8px_24px_rgba(36,107,253,.18)] ring-2 ring-[var(--brand)]":"ring-1 ring-transparent"}`} key={tooth} onClick={()=>onSelect(tooth)} title={label} type="button"><span className={`relative flex h-14 w-full items-center justify-center rounded-xl transition ${selected===tooth?"bg-[var(--brand)] shadow-sm":"bg-blue-200/65 group-hover:bg-blue-300/70"}`}><Image alt="" aria-hidden="true" className="max-h-12 w-auto object-contain drop-shadow-sm transition group-hover:scale-110" height={54} src={`/assets/dentist-app/tooth-${tooth}.svg`} width={48}/>{toothFindings.length?<span className={`absolute -right-0.5 top-0 grid size-4 place-items-center rounded-full text-[9px] font-black text-white ring-2 ring-white ${principal==="treated"?"bg-emerald-500":principal==="monitoring"?"bg-blue-500":"bg-amber-500"}`}>{toothFindings.length}</span>:null}</span><span className={`text-[11px] font-extrabold ${selected===tooth?"text-[var(--brand)]":"text-slate-600"}`}>{tooth}</span><span className="sr-only">{principal?statusCodes[principal]:"Sans constatation"}</span></button>}
 }
 
-function NewFindingForm({ tooth, role, action }: { tooth: PermanentTooth; role: AppRole; action: Props["createAction"] }) {
-  const [state, formAction, pending] = useActionState(action, initialState);
-  return <form action={formAction} className="mt-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-4"><h4 className="text-sm font-semibold text-slate-900">Ajouter une constatation</h4><input name="toothNumber" type="hidden" value={tooth} /><FindingFields role={role} state={state} /><ActionMessage state={state} /><button className="mt-4 rounded-md bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={pending} type="submit">{pending ? "Enregistrement…" : "Ajouter"}</button></form>;
-}
+function toothName(tooth:PermanentTooth){const names:Record<number,string>={1:"Incisive centrale",2:"Incisive latérale",3:"Canine",4:"Première prémolaire",5:"Deuxième prémolaire",6:"Première molaire",7:"Deuxième molaire",8:"Troisième molaire"};const quadrant=Math.floor(tooth/10);const level=quadrant<3?"supérieure":"inférieure";const side=quadrant===1||quadrant===4?"droite":"gauche";return `${names[tooth%10]} ${level} ${side}`}
 
-function FindingEditor({ finding, patientActive, role, updateAction, resolveAction }: { finding: DentalFinding; patientActive: boolean; role: AppRole; updateAction: (state: DentalActionState, formData: FormData) => Promise<DentalActionState>; resolveAction: () => Promise<void> }) {
-  const [state, formAction, pending] = useActionState(updateAction, initialState);
-  if (!patientActive) return <article className="rounded-md border border-slate-200 p-4"><p className="font-medium">{conditionLabels[finding.condition]} · {statusLabels[finding.status]}</p><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{finding.notes ?? "Aucune note."}</p>{finding.recommendation ? <p className="mt-2 text-sm text-slate-600">Recommandation : {finding.recommendation}</p> : null}</article>;
-  return <form action={formAction} className="rounded-md border border-slate-200 p-4"><input name="toothNumber" type="hidden" value={finding.tooth_number} /><FindingFields finding={finding} role={role} state={state} /><ActionMessage state={state} /><div className="mt-4 flex flex-wrap gap-2"><button className="rounded-md border border-[var(--brand)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)] disabled:opacity-60" disabled={pending} type="submit">{pending ? "Mise à jour…" : "Mettre à jour"}</button>{role === "doctor" ? <button className="rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700" formAction={resolveAction}>Marquer comme résolue</button> : null}</div></form>;
-}
+function NewFindingForm({tooth,role,action}:{tooth:PermanentTooth;role:AppRole;action:Props["createAction"]}){const[state,formAction,pending]=useActionState(action,initialState);return <form action={formAction} className="rounded-[22px] bg-[linear-gradient(145deg,#f8fbff,#eef6ff)] p-4 ring-1 ring-inset ring-blue-100 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-bold tracking-[.14em] text-[var(--brand)] uppercase">Nouveau suivi</p><h4 className="mt-1 font-bold text-[var(--navy)]">Ajouter une constatation à la dent {tooth}</h4></div><StatusPill>Dent {tooth}</StatusPill></div><input name="toothNumber" type="hidden" value={tooth}/><FindingFields role={role} state={state}/><ActionMessage state={state}/><button className="mt-4 rounded-xl bg-[var(--brand)] px-5 py-2.5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(36,107,253,.2)] transition hover:bg-[var(--brand-strong)] disabled:opacity-60" disabled={pending} type="submit">{pending?"Enregistrement…":"Ajouter la constatation"}</button></form>}
 
-function FindingFields({ finding, role, state }: { finding?: DentalFinding; role: AppRole; state: DentalActionState }) {
-  const statuses = role === "doctor" ? editableDentalStatuses : editableDentalStatuses.filter((status) => status !== "treated");
-  const inputClass = "mt-1 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm";
-  return <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">État<select className={inputClass} defaultValue={finding?.condition ?? "caries"} name="condition">{dentalConditions.map((condition) => <option key={condition} value={condition}>{conditionLabels[condition]}</option>)}</select><FieldError value={state.fieldErrors.condition} /></label><label className="text-sm font-medium text-slate-700">Statut<select className={inputClass} defaultValue={finding?.status ?? "untreated"} name="status">{statuses.map((status) => <option key={status} value={status}>{statusLabels[status as DentalStatus]}</option>)}</select><FieldError value={state.fieldErrors.status} /></label><label className="text-sm font-medium text-slate-700 sm:col-span-2">Notes<textarea className={inputClass} defaultValue={finding?.notes ?? ""} maxLength={4000} name="notes" rows={3} /><FieldError value={state.fieldErrors.notes} /></label><label className="text-sm font-medium text-slate-700 sm:col-span-2">Recommandation<textarea className={inputClass} defaultValue={finding?.recommendation ?? ""} maxLength={2000} name="recommendation" rows={2} /><FieldError value={state.fieldErrors.recommendation} /></label></div>;
-}
+function FindingEditor({finding,patientActive,role,updateAction,resolveAction}:{finding:DentalFinding;patientActive:boolean;role:AppRole;updateAction:(state:DentalActionState,formData:FormData)=>Promise<DentalActionState>;resolveAction:()=>Promise<void>}){const[state,formAction,pending]=useActionState(updateAction,initialState);if(!patientActive)return <article className="rounded-[18px] border border-slate-200 p-4"><p className="font-semibold">{conditionLabels[finding.condition]} · {statusLabels[finding.status]}</p><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{finding.notes??"Aucune note."}</p>{finding.recommendation?<p className="mt-2 text-sm text-slate-600">Recommandation : {finding.recommendation}</p>:null}</article>;return <form action={formAction} className="rounded-[18px] border border-slate-200 p-4 shadow-[0_6px_20px_rgba(16,44,76,.04)]"><input name="toothNumber" type="hidden" value={finding.tooth_number}/><FindingFields finding={finding} role={role} state={state}/><ActionMessage state={state}/><div className="mt-4 flex flex-wrap gap-2"><button className="min-h-11 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-[var(--brand-strong)] disabled:opacity-60" disabled={pending} type="submit">{pending?"Mise à jour…":"Mettre à jour"}</button>{role==="doctor"?<PendingSubmitButton className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 disabled:opacity-60" formAction={resolveAction} pendingLabel="Résolution…">Marquer comme résolue</PendingSubmitButton>:null}</div></form>}
 
-function FieldError({ value }: { value?: string }) { return value ? <span className="mt-1 block text-sm text-red-700">{value}</span> : null; }
-function ActionMessage({ state }: { state: DentalActionState }) { return state.message ? <p aria-live="polite" className={`mt-3 text-sm ${state.success ? "text-emerald-700" : "text-red-700"}`}>{state.message}</p> : null; }
+function FindingFields({finding,role,state}:{finding?:DentalFinding;role:AppRole;state:DentalActionState}){const statuses=role==="doctor"?editableDentalStatuses:editableDentalStatuses.filter(status=>status!=="treated");const inputClass="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100";return <div className="mt-4 grid gap-3 sm:grid-cols-2"><FormField className="text-xs font-bold text-slate-600" error={state.fieldErrors.condition} label="État"><select className={inputClass} defaultValue={finding?.condition??"caries"} name="condition">{dentalConditions.map(condition=><option key={condition} value={condition}>{conditionLabels[condition]}</option>)}</select></FormField><FormField className="text-xs font-bold text-slate-600" error={state.fieldErrors.status} label="Statut"><select className={inputClass} defaultValue={finding?.status??"untreated"} name="status">{statuses.map(status=><option key={status} value={status}>{statusLabels[status as DentalStatus]}</option>)}</select></FormField><FormField className="text-xs font-bold text-slate-600 sm:col-span-2" error={state.fieldErrors.notes} label="Notes"><textarea className={inputClass} defaultValue={finding?.notes??""} maxLength={4000} name="notes" rows={3}/></FormField><FormField className="text-xs font-bold text-slate-600 sm:col-span-2" error={state.fieldErrors.recommendation} label="Recommandation"><textarea className={inputClass} defaultValue={finding?.recommendation??""} maxLength={2000} name="recommendation" rows={2}/></FormField></div>}
+function ActionMessage({state}:{state:DentalActionState}){return state.message?<p aria-live="polite" className={`mt-3 text-sm ${state.success?"text-emerald-700":"text-red-700"}`} role={state.success?"status":"alert"}>{state.message}</p>:null}

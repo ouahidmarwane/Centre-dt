@@ -21,13 +21,17 @@ export default async function PatientPrintPage({ params }: { params: Promise<{ i
   if (!isPatientId(id)) notFound();
   const patient = user.role === "doctor" ? await getPatient(id) : await getOperationalPatient(id);
   if (!patient) notFound();
-  const appointments = await getPatientAppointments(id);
-  const full = user.role === "doctor" ? await Promise.all([getDentalChart(id), getPatientFinances(id), getPatientPrescriptionSummaries(id)]) : null;
+  const [appointments, full] = await Promise.all([
+    getPatientAppointments(id),
+    user.role === "doctor"
+      ? Promise.all([getDentalChart(id), getPatientFinances(id), getPatientPrescriptionSummaries(id)])
+      : Promise.resolve(null),
+  ]);
   const clinicalPatient = full ? patient as Patient : null;
   const age = calculateAge(patient.date_of_birth);
 
   return <div className="document-page">
-    <div className="print:hidden mx-auto mb-4 flex max-w-[210mm] items-center justify-between gap-3"><Link className="text-sm font-semibold text-[var(--brand-strong)]" href={`/patients/${id}`}>← Retour au patient</Link><PrintButton /></div>
+    <div className="print:hidden mx-auto mb-4 flex max-w-[210mm] items-center justify-between gap-3"><Link className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-strong)]" href={`/patients/${id}`}>← Retour au patient</Link><PrintButton /></div>
     <ClinicDocument subtitle={user.role === "doctor" ? "Dossier clinique complet" : "Résumé administratif et opérationnel"} title="Dossier patient">
       <Section title="Identité"><Grid><Value label="Patient" value={`${patient.first_name} ${patient.last_name}`} /><Value label="Date de naissance" value={patient.date_of_birth ?? "Non renseignée"} /><Value label="Âge" value={age === null ? "Non renseigné" : `${age} ans`} /><Value label="Téléphone" value={patient.phone} /><Value label="Profession" value={patient.profession ?? "Non renseignée"} /><Value label="Statut" value={patient.is_active ? "Actif" : "Archivé"} /></Grid>{patient.address ? <Text label="Adresse" value={patient.address} /> : null}</Section>
       <Section title="Mutuelle"><p>{patient.has_mutuelle ? patient.mutuelle_name : "Aucune mutuelle déclarée"}</p></Section>

@@ -1,28 +1,28 @@
-import Link from "next/link";
-import { PageHeader } from "@/components/page-header";
+import { MainDashboardView } from "@/components/dashboard/main-dashboard";
+import { getAccountingDashboard } from "@/lib/accounting/data";
 import { requireUser } from "@/lib/auth/server";
-import { getDashboardSchedule } from "@/lib/appointments/data";
-import { formatClinicTime } from "@/lib/appointments/validation";
+import { getMainDashboard } from "@/lib/dashboard/data";
+import { resolveDashboardPeriod } from "@/lib/dashboard/period";
 
-export default async function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ period?: string | string[] }> }) {
   const user = await requireUser();
-  const schedule=await getDashboardSchedule();
+  const query = await searchParams;
+  const selectedPeriod = resolveDashboardPeriod(query.period);
+  const operationalPromise = getMainDashboard();
 
-  return (
-    <>
-      <PageHeader
-        description="Retrouvez les priorités opérationnelles de la journée."
-        eyebrow="Vue d’ensemble"
-        title={`Bonjour, ${user.fullName}`}
-      />
-      <section className="mt-6 grid gap-4 sm:grid-cols-3" aria-label="Résumé de la journée">
-        <Summary label="Rendez-vous aujourd’hui" value={String(schedule.count)}/>
-        <Summary label="Prochain rendez-vous" value={schedule.next?`${formatClinicTime(schedule.next.starts_at)} · ${schedule.next.title}`:"Aucun à venir"}/>
-        <Summary label="Rappels à traiter" value={String(schedule.reminderCount)} attention={schedule.reminderCount>0}/>
-      </section>
-      <Link className="mt-5 inline-flex rounded-md bg-[var(--brand)] px-4 py-2.5 text-sm font-semibold text-white" href={`/appointments?date=${schedule.date}`}>Ouvrir le planning du jour</Link>
-    </>
-  );
+  if (user.role === "doctor") {
+    const sixMonths = resolveDashboardPeriod("six_months");
+    const [operational, financial, sixMonthFinancial] = await Promise.all([
+      operationalPromise,
+      getAccountingDashboard(selectedPeriod.startDate, selectedPeriod.endDate, selectedPeriod.bucket),
+      selectedPeriod.key === "six_months"
+        ? getAccountingDashboard(selectedPeriod.startDate, selectedPeriod.endDate, selectedPeriod.bucket)
+        : getAccountingDashboard(sixMonths.startDate, sixMonths.endDate, sixMonths.bucket),
+    ]);
+    return <MainDashboardView financial={financial} operational={operational} period={selectedPeriod.key} sixMonthFinancial={sixMonthFinancial} user={user} />;
+  }
+
+  return <MainDashboardView operational={await operationalPromise} period={selectedPeriod.key} user={user} />;
 }
-
-function Summary({label,value,attention=false}:{label:string;value:string;attention?:boolean}){return <div className={`rounded-lg border p-5 ${attention?"border-amber-200 bg-amber-50":"border-[var(--border)] bg-white"}`}><p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p><p className="mt-2 text-lg font-bold text-slate-900">{value}</p></div>}

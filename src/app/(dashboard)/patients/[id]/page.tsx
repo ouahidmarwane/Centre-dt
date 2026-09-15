@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { archivePatientAction } from "@/app/(dashboard)/patients/actions";
@@ -15,13 +16,14 @@ import { getDentalChart } from "@/lib/odontogram/data";
 import { getPatientFinances } from "@/lib/finance/data";
 import { hasPermission } from "@/lib/permissions";
 import { getPatientAppointments } from "@/lib/appointments/data";
-import { clinicDateValue, formatClinicDate, formatClinicTime } from "@/lib/appointments/validation";
+import { clinicDateTimeValue, clinicDateValue, formatClinicDate, formatClinicTime } from "@/lib/appointments/validation";
 import { createPrescriptionAction, voidPrescriptionAction } from "@/app/(dashboard)/patients/[id]/prescription-actions";
 import { PatientPrescriptions } from "@/components/prescriptions/patient-prescriptions";
 import { getPatientPrescriptionSummaries } from "@/lib/prescriptions/data";
 import { createInvoiceAction, createReceiptAction, voidInvoiceAction } from "@/app/(dashboard)/patients/[id]/financial-document-actions";
 import { FinancialDocuments } from "@/components/finance/financial-documents";
 import { getPatientFinancialDocuments } from "@/lib/financial-documents/data";
+import { BentoCard, DataRow, StatusPill } from "@/components/ui/clinic-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +61,7 @@ export default async function PatientDetailsPage({
       <PageHeader
         action={
           <div className="flex flex-wrap items-center gap-3">
-            {patient.is_active ? <Link className="rounded-md border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href={`/patients/${patient.id}/edit`}>Modifier</Link> : null}
+            {patient.is_active ? <Link className="inline-flex min-h-11 items-center rounded-md border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href={`/patients/${patient.id}/edit`}>Modifier</Link> : null}
             {patient.is_active && hasPermission(user.role, "patients.archive") ? <ArchivePatientButton action={archiveAction} /> : null}
           </div>
         }
@@ -71,31 +73,49 @@ export default async function PatientDetailsPage({
       {!patient.is_active ? <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Ce dossier est archivé. Il reste consultable mais ne peut plus être modifié.</div> : null}
       {query.error === "archive-failed" ? <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">L’archivage n’a pas pu être effectué.</div> : null}
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-2">
-        <InformationSection title="Identité">
-          <Definition label="Prénom" value={patient.first_name} />
-          <Definition label="Nom" value={patient.last_name} />
-          <Definition label="Date de naissance" value={displayDate(patient.date_of_birth)} />
-          <Definition label="Âge" value={age === null ? "Non renseigné" : `${age} ans`} />
-        </InformationSection>
-        <InformationSection title="Coordonnées">
-          <Definition label="Téléphone" value={patient.phone} />
-          <Definition label="Profession" value={patient.profession ?? "Non renseignée"} />
-          <div className="sm:col-span-2"><p className="text-xs font-semibold tracking-wide text-[var(--muted)] uppercase">Adresse</p><div className="mt-1">{textOrEmpty(patient.address, "Aucune adresse renseignée")}</div></div>
-        </InformationSection>
-        <InformationSection title="Mutuelle">
-          <Definition label="Couverture" value={patient.has_mutuelle ? "Oui" : "Non"} />
-          <Definition label="Organisme" value={patient.mutuelle_name ?? "Aucune mutuelle"} />
-        </InformationSection>
-        <InformationSection title="Antécédents médicaux">
-          <div className="sm:col-span-2">{patient.has_medical_history ? textOrEmpty(patient.medical_history_notes) : <p className="text-sm text-[var(--muted)]">Aucun antécédent déclaré.</p>}</div>
-        </InformationSection>
-        <InformationSection title="Allergies">
-          <div className="sm:col-span-2">{patient.has_allergies ? textOrEmpty(patient.allergy_notes) : <p className="text-sm text-[var(--muted)]">Aucune allergie déclarée.</p>}</div>
-        </InformationSection>
-        <InformationSection title="Remarques">
-          <div className="sm:col-span-2">{textOrEmpty(patient.general_notes, "Aucune remarque générale.")}</div>
-        </InformationSection>
+      <div className="mt-6 grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-12">
+        <BentoCard className="min-h-64 bg-[linear-gradient(145deg,#fff_25%,#eef7ff)] md:col-span-2 xl:col-span-7" eyebrow="Vue d’ensemble" title="Identité">
+          <div className="relative z-10 mt-6 flex flex-col gap-6 sm:flex-row sm:items-end">
+            <div className="relative flex size-28 shrink-0 items-center justify-center rounded-[30px] bg-[var(--navy)] text-3xl font-bold text-white shadow-[0_16px_28px_rgba(16,44,76,.22)]">
+              {patient.first_name.charAt(0)}{patient.last_name.charAt(0)}
+              <span className="absolute -right-2 -top-2 size-5 rounded-full border-4 border-white bg-[var(--gold)]" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><h3 className="text-2xl font-bold tracking-[-0.035em] text-[var(--navy)]">{patient.first_name} {patient.last_name}</h3><StatusPill tone={patient.is_active ? "green" : "neutral"}>{patient.is_active ? "● Dossier actif" : "○ Archivé"}</StatusPill></div>
+              <p className="mt-2 text-sm text-slate-500">{age === null ? "Âge non renseigné" : `${age} ans`} · Né(e) le {displayDate(patient.date_of_birth)}</p>
+              <dl className="mt-5 grid gap-2 sm:grid-cols-2"><DataRow label="Prénom" value={patient.first_name} /><DataRow label="Nom" value={patient.last_name} /></dl>
+            </div>
+          </div>
+          <Image alt="" aria-hidden="true" className="absolute -right-3 bottom-1 h-auto w-24 rotate-[-12deg] opacity-[.06]" height={96} src="/assets/dentist-app/tooth-16.svg" width={96} />
+        </BentoCard>
+
+        <BentoCard className="bg-[linear-gradient(160deg,#fff,#f8fbff)] xl:col-span-5" eyebrow="Contact" title="Coordonnées">
+          <dl className="relative z-10 mt-5 grid gap-2">
+            <DataRow label="Téléphone" value={patient.phone} />
+            <DataRow label="Profession" value={patient.profession ?? "Non renseignée"} />
+            <div className="rounded-2xl bg-[var(--navy)] px-4 py-3 text-white"><dt className="text-[10px] font-bold tracking-[0.12em] text-blue-200 uppercase">Adresse</dt><dd className="mt-1 text-sm leading-6">{patient.address ?? "Aucune adresse renseignée"}</dd></div>
+          </dl>
+        </BentoCard>
+
+        <BentoCard className="xl:col-span-4" eyebrow="Couverture" title="Mutuelle">
+          <div className="relative z-10 mt-6 flex items-center gap-4">
+            <div className={`grid size-20 shrink-0 place-items-center rounded-full border-[7px] ${patient.has_mutuelle ? "border-blue-100 border-t-[var(--brand)]" : "border-slate-100"}`}><span className="text-xs font-extrabold text-[var(--navy)]">{patient.has_mutuelle ? "OUI" : "NON"}</span></div>
+            <div><StatusPill tone={patient.has_mutuelle ? "blue" : "neutral"}>{patient.has_mutuelle ? "Couverture déclarée" : "Sans couverture"}</StatusPill><p className="mt-3 text-sm font-semibold text-slate-700">{patient.mutuelle_name ?? "Aucun organisme"}</p></div>
+          </div>
+        </BentoCard>
+
+        <BentoCard className="bg-[linear-gradient(145deg,#102c4c,#163d68)] text-white xl:col-span-8" eyebrow="Contexte clinique" title="Antécédents médicaux">
+          <div className="relative z-10 mt-6 max-w-2xl rounded-2xl bg-white/10 p-4 ring-1 ring-inset ring-white/15 [&_p]:text-blue-50">{patient.has_medical_history ? textOrEmpty(patient.medical_history_notes) : <p className="text-sm">Aucun antécédent déclaré.</p>}</div>
+          <div className="absolute bottom-5 right-5 hidden h-14 w-24 items-end gap-1 opacity-50 sm:flex" aria-hidden="true">{[35,55,42,70,50,82,62].map((height,index)=><span className="w-2 rounded-full bg-blue-300" key={index} style={{height}} />)}</div>
+        </BentoCard>
+
+        <BentoCard className={`xl:col-span-5 ${patient.has_allergies ? "bg-[linear-gradient(145deg,#fff,#fff8e8)]" : ""}`} eyebrow="Vigilance" title="Allergies">
+          <div className="relative z-10 mt-5"><StatusPill tone={patient.has_allergies ? "gold" : "green"}>{patient.has_allergies ? "! Attention requise" : "✓ Rien de déclaré"}</StatusPill><div className="mt-4 rounded-2xl border border-amber-100/70 bg-white/75 p-4">{patient.has_allergies ? textOrEmpty(patient.allergy_notes) : <p className="text-sm text-[var(--muted)]">Aucune allergie déclarée.</p>}</div></div>
+        </BentoCard>
+
+        <BentoCard className="xl:col-span-7" eyebrow="Note au dossier" title="Remarques">
+          <div className="relative z-10 mt-5 min-h-28 rounded-[18px] border-l-4 border-[var(--gold)] bg-[var(--gold-soft)]/55 p-5 before:absolute before:right-6 before:top-4 before:text-5xl before:font-serif before:text-[var(--gold)]/20 before:content-['”']">{textOrEmpty(patient.general_notes, "Aucune remarque générale.")}</div>
+        </BentoCard>
       </div>
 
       <Odontogram
@@ -113,7 +133,7 @@ export default async function PatientDetailsPage({
         createAction={createInterventionAction.bind(null,patient.id)}
         findings={dentalChart.findings}
         interventions={finances.interventions}
-        nowLocal={now.toISOString().slice(0,16)}
+        nowLocal={clinicDateTimeValue(now)}
         patientActive={patient.is_active}
         payments={finances.payments}
         paymentToken={crypto.randomUUID()}
@@ -121,7 +141,7 @@ export default async function PatientDetailsPage({
         reverseAction={reversePaymentAction.bind(null,patient.id)}
         role={user.role}
         summary={finances.summary}
-        today={now.toISOString().slice(0,10)}
+        today={clinicDateValue(now)}
         updateAction={updateInterventionAction.bind(null,patient.id)}
       />
 
@@ -144,19 +164,11 @@ export default async function PatientDetailsPage({
       />
 
       <section className="mt-6 rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6" aria-labelledby="patient-appointments-title">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900" id="patient-appointments-title">Rendez-vous</h2><p className="mt-1 text-sm text-[var(--muted)]">Derniers rendez-vous et rendez-vous à venir.</p></div>{patient.is_active?<Link className="rounded-md bg-[var(--brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)]" href={`/appointments?date=${clinicDateValue(now)}&patient=${patient.id}`}>Planifier</Link>:null}</div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900" id="patient-appointments-title">Rendez-vous</h2><p className="mt-1 text-sm text-[var(--muted)]">Derniers rendez-vous et rendez-vous à venir.</p></div>{patient.is_active?<Link className="inline-flex min-h-11 items-center rounded-md bg-[var(--brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)]" href={`/appointments?date=${clinicDateValue(now)}&patient=${patient.id}`}>Planifier</Link>:null}</div>
         <div className="mt-4 grid gap-3">{appointments.map(appointment=><article className="rounded-md border border-slate-200 px-4 py-3" key={appointment.id}><div className="flex flex-wrap justify-between gap-2"><p className="font-medium text-slate-900">{appointment.title}</p><span className="text-xs font-semibold text-slate-600">{appointment.status==="scheduled"?"Planifié":appointment.status==="completed"?"Terminé":appointment.status==="cancelled"?"Annulé":"Absent"}</span></div><p className="mt-1 text-sm text-[var(--muted)]">{formatClinicDate(appointment.starts_at)} · {formatClinicTime(appointment.starts_at)}–{formatClinicTime(appointment.ends_at)}</p></article>)}{!appointments.length?<p className="rounded-md bg-slate-50 px-4 py-3 text-sm text-[var(--muted)]">Aucun rendez-vous enregistré.</p>:null}</div>
       </section>
 
-      <Link className="mt-6 inline-flex text-sm font-semibold text-[var(--brand-strong)] hover:underline" href="/patients">Retour à la liste</Link>
+      <Link className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-strong)] hover:underline" href="/patients">Retour à la liste</Link>
     </>
   );
-}
-
-function InformationSection({ children, title }: { children: React.ReactNode; title: string }) {
-  return <section className="rounded-lg border border-[var(--border)] bg-white p-5 sm:p-6"><h2 className="font-semibold text-slate-900">{title}</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2">{children}</dl></section>;
-}
-
-function Definition({ label, value }: { label: string; value: string }) {
-  return <div><dt className="text-xs font-semibold tracking-wide text-[var(--muted)] uppercase">{label}</dt><dd className="mt-1 text-sm text-slate-800">{value}</dd></div>;
 }

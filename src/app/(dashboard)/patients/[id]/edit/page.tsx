@@ -38,7 +38,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
   return (
     <>
       <PageHeader
-        action={<Link className="text-sm font-semibold text-slate-600 hover:text-slate-900" href={`/patients/${patient.id}`}>Annuler</Link>}
+        action={<Link className="inline-flex min-h-11 items-center text-sm font-semibold text-slate-600 hover:text-slate-900" href={`/patients/${patient.id}`}>Annuler</Link>}
         description="Les modifications sont historisées sans recopier les données sensibles dans le journal d’audit."
         eyebrow="Dossier patient"
         title={`Modifier ${patient.first_name} ${patient.last_name}`}

@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildWhatsAppReminderUrl, clinicLocalToIso, isReminderDue, normalizeWhatsAppPhone, shiftCalendarDate, validateAppointmentForm } from "./validation.ts";
+import { buildWhatsAppReminderUrl, clinicDateTimeValue, clinicLocalToIso, isReminderDue, normalizeWhatsAppPhone, shiftCalendarDate, validateAppointmentForm } from "./validation.ts";
 
 test("clinic local times use Africa/Casablanca rules instead of a fixed offset",()=>{
   assert.equal(clinicLocalToIso("2026-01-15T10:00"),"2026-01-15T09:00:00.000Z");
   assert.equal(clinicLocalToIso("2026-03-01T10:00"),"2026-03-01T10:00:00.000Z");
   assert.equal(clinicLocalToIso("invalid"),null);
   assert.equal(shiftCalendarDate("2026-12-31",1),"2027-01-01");
+});
+
+test("datetime-local values are formatted in clinic time",()=>{
+  assert.equal(clinicDateTimeValue(new Date("2026-09-12T23:30:00Z")),"2026-09-13T00:30");
 });
 
 test("appointment validation rejects past and excessive durations",()=>{

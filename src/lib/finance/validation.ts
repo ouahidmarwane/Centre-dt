@@ -1,4 +1,5 @@
 import { permanentTeeth, type PermanentTooth } from "../odontogram/validation.ts";
+import { clinicDateValue, clinicLocalToIso } from "../appointments/validation.ts";
 
 export const interventionStatuses = ["planned", "performed"] as const;
 export const paymentMethods = ["cash", "card", "bank_transfer", "cheque", "other"] as const;
@@ -42,7 +43,7 @@ export function validateInterventionForm(form: FormData, now = new Date()): Resu
   const teethRaw=form.getAll("teeth"), findingsRaw=form.getAll("findingIds");
   const errors: Partial<Record<FinanceField,string>>={};
   if (!validDate(performedAt)) errors.performedAt="Date invalide.";
-  else if (status === "performed" && performedAt > now.toISOString().slice(0,10)) errors.performedAt="Une intervention réalisée ne peut pas être future.";
+  else if (status === "performed" && performedAt > clinicDateValue(now)) errors.performedAt="Une intervention réalisée ne peut pas être future.";
   if (!nature || nature.length>160) errors.nature="La nature doit contenir entre 1 et 160 caractères.";
   if (!isMoney(amountDue,true)) errors.amountDue="Montant MAD invalide (deux décimales maximum).";
   if (!interventionStatuses.includes(status as InterventionStatusInput)) errors.status="Statut invalide.";
@@ -60,13 +61,14 @@ export function validatePaymentForm(form: FormData, now = new Date()): Result<Pa
   const errors: Partial<Record<FinanceField,string>>={};
   if (!isMoney(amount,false)) errors.amount="Montant MAD invalide et strictement positif.";
   if (!paymentMethods.includes(method as PaymentMethodInput)) errors.method="Mode de paiement invalide.";
-  const parsed=new Date(receivedAt);
-  if (!receivedAt || Number.isNaN(parsed.valueOf()) || parsed>now) errors.receivedAt="Date de réception invalide.";
+  const receivedAtIso=clinicLocalToIso(receivedAt);
+  const parsed=receivedAtIso?new Date(receivedAtIso):null;
+  if (!parsed || parsed>now) errors.receivedAt="Date de réception invalide.";
   if (reference.length>160) errors.reference="La référence est limitée à 160 caractères.";
   if (notes.length>2000) errors.notes="La note est limitée à 2 000 caractères.";
   if (!uuidPattern.test(idempotencyKey)) errors.idempotencyKey="Jeton de paiement invalide.";
   if (Object.keys(errors).length) return {success:false,fieldErrors:errors};
-  return {success:true,data:{amount,method:method as PaymentMethodInput,receivedAt:parsed.toISOString(),reference:reference||null,notes:notes||null,idempotencyKey}};
+  return {success:true,data:{amount,method:method as PaymentMethodInput,receivedAt:parsed!.toISOString(),reference:reference||null,notes:notes||null,idempotencyKey}};
 }
 
 export function validateReason(value: unknown): string | null {

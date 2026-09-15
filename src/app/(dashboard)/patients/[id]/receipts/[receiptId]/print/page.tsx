@@ -23,7 +23,7 @@ export default async function ReceiptPrintPage({ params }: { params: Promise<{ i
   if (!receipt) notFound();
   const reversed = receipt.paymentStatus === "reversed";
   return <div className="document-page">
-    <div className="print:hidden mx-auto mb-4 flex max-w-[210mm] items-center justify-between gap-3"><Link className="text-sm font-semibold text-[var(--brand-strong)]" href={`/patients/${id}`}>← Retour au patient</Link><PrintButton /></div>
+    <div className="print:hidden mx-auto mb-4 flex max-w-[210mm] items-center justify-between gap-3"><Link className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-strong)]" href={`/patients/${id}`}>← Retour au patient</Link><PrintButton /></div>
     <ClinicDocument
       documentLabel="Document financier"
       footerText="Reçu historique d’un paiement enregistré par le cabinet. Ce document ne constitue pas une facture fiscale certifiée."

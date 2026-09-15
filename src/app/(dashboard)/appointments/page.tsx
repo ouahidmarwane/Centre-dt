@@ -12,7 +12,7 @@ export default async function AppointmentsPage({searchParams}:{searchParams:Prom
   return (
     <>
       <PageHeader
-        action={<nav aria-label="Navigation par date" className="flex items-center gap-2"><Link className="rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm font-semibold" href={`/appointments?date=${shiftCalendarDate(date,-1)}`}>Jour précédent</Link><Link className="rounded-md bg-[var(--brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--brand-strong)]" href="/appointments">Aujourd’hui</Link><Link className="rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm font-semibold" href={`/appointments?date=${shiftCalendarDate(date,1)}`}>Jour suivant</Link></nav>}
+        action={<nav aria-label="Navigation par date" className="flex items-center gap-1 rounded-2xl border border-white/80 bg-white/75 p-1.5 shadow-[0_10px_28px_rgba(32,104,177,.08)] backdrop-blur-xl"><Link aria-label="Jour précédent" className="grid size-11 place-items-center rounded-xl text-lg font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700" href={`/appointments?date=${shiftCalendarDate(date,-1)}`}>←</Link><Link className="inline-flex min-h-11 items-center rounded-xl bg-[var(--brand)] px-3 py-2 text-xs font-bold text-white shadow-sm" href="/appointments">Aujourd’hui</Link><Link aria-label="Jour suivant" className="grid size-11 place-items-center rounded-xl text-lg font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700" href={`/appointments?date=${shiftCalendarDate(date,1)}`}>→</Link></nav>}
         description="Planning quotidien, suivi des statuts et rappels WhatsApp déclenchés manuellement."
         eyebrow="Agenda du cabinet"
         title="Rendez-vous"

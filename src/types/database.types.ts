@@ -1174,6 +1174,7 @@ export type Database = {
           starts_at: string
         }[]
       }
+      get_main_dashboard: { Args: { reference_time?: string }; Returns: Json }
       get_patient_financial_summary: {
         Args: { target_patient_id: string }
         Returns: {

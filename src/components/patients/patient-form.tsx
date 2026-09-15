@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import type { PatientActionState } from "@/app/(dashboard)/patients/actions";
 import { patientLimits, type PatientInput } from "@/lib/patients/validation";
@@ -32,8 +32,8 @@ const initialActionState: PatientActionState = {
   fieldErrors: {},
 };
 
-function FieldError({ message }: { message?: string }) {
-  return message ? <p className="mt-1 text-sm text-red-700">{message}</p> : null;
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return message ? <p className="mt-1 text-sm text-red-700" id={id}>{message}</p> : null;
 }
 
 const inputClass =
@@ -44,11 +44,18 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
   const [hasMutuelle, setHasMutuelle] = useState(initialValues.hasMutuelle);
   const [hasMedicalHistory, setHasMedicalHistory] = useState(initialValues.hasMedicalHistory);
   const [hasAllergies, setHasAllergies] = useState(initialValues.hasAllergies);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (Object.keys(state.fieldErrors).length) {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }
+  }, [state]);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="space-y-6" ref={formRef}>
       {state.message ? (
-        <div aria-live="polite" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div aria-live="polite" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
           {state.message}
         </div>
       ) : null}
@@ -57,18 +64,18 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium text-slate-700">
             Prénom <span aria-hidden="true">*</span>
-            <input className={inputClass} defaultValue={initialValues.firstName} maxLength={patientLimits.name} name="firstName" required />
-            <FieldError message={state.fieldErrors.firstName} />
+            <input aria-describedby={state.fieldErrors.firstName ? "patient-first-name-error" : undefined} aria-invalid={Boolean(state.fieldErrors.firstName)} className={inputClass} defaultValue={initialValues.firstName} maxLength={patientLimits.name} name="firstName" required />
+            <FieldError id="patient-first-name-error" message={state.fieldErrors.firstName} />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Nom <span aria-hidden="true">*</span>
-            <input className={inputClass} defaultValue={initialValues.lastName} maxLength={patientLimits.name} name="lastName" required />
-            <FieldError message={state.fieldErrors.lastName} />
+            <input aria-describedby={state.fieldErrors.lastName ? "patient-last-name-error" : undefined} aria-invalid={Boolean(state.fieldErrors.lastName)} className={inputClass} defaultValue={initialValues.lastName} maxLength={patientLimits.name} name="lastName" required />
+            <FieldError id="patient-last-name-error" message={state.fieldErrors.lastName} />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Date de naissance
-            <input className={inputClass} defaultValue={initialValues.dateOfBirth ?? ""} min="1900-01-01" name="dateOfBirth" type="date" />
-            <FieldError message={state.fieldErrors.dateOfBirth} />
+            <input aria-describedby={state.fieldErrors.dateOfBirth ? "patient-birth-date-error" : undefined} aria-invalid={Boolean(state.fieldErrors.dateOfBirth)} className={inputClass} defaultValue={initialValues.dateOfBirth ?? ""} min="1900-01-01" name="dateOfBirth" type="date" />
+            <FieldError id="patient-birth-date-error" message={state.fieldErrors.dateOfBirth} />
           </label>
         </div>
       </FormSection>
@@ -77,18 +84,18 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium text-slate-700">
             Téléphone <span aria-hidden="true">*</span>
-            <input className={inputClass} defaultValue={initialValues.phone} inputMode="tel" maxLength={patientLimits.phone} name="phone" required type="tel" />
-            <FieldError message={state.fieldErrors.phone} />
+            <input aria-describedby={state.fieldErrors.phone ? "patient-phone-error" : undefined} aria-invalid={Boolean(state.fieldErrors.phone)} className={inputClass} defaultValue={initialValues.phone} inputMode="tel" maxLength={patientLimits.phone} name="phone" required type="tel" />
+            <FieldError id="patient-phone-error" message={state.fieldErrors.phone} />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Profession
-            <input className={inputClass} defaultValue={initialValues.profession ?? ""} maxLength={patientLimits.profession} name="profession" />
-            <FieldError message={state.fieldErrors.profession} />
+            <input aria-describedby={state.fieldErrors.profession ? "patient-profession-error" : undefined} aria-invalid={Boolean(state.fieldErrors.profession)} className={inputClass} defaultValue={initialValues.profession ?? ""} maxLength={patientLimits.profession} name="profession" />
+            <FieldError id="patient-profession-error" message={state.fieldErrors.profession} />
           </label>
           <label className="text-sm font-medium text-slate-700 sm:col-span-2">
             Adresse
-            <textarea className={inputClass} defaultValue={initialValues.address ?? ""} maxLength={patientLimits.address} name="address" rows={3} />
-            <FieldError message={state.fieldErrors.address} />
+            <textarea aria-describedby={state.fieldErrors.address ? "patient-address-error" : undefined} aria-invalid={Boolean(state.fieldErrors.address)} className={inputClass} defaultValue={initialValues.address ?? ""} maxLength={patientLimits.address} name="address" rows={3} />
+            <FieldError id="patient-address-error" message={state.fieldErrors.address} />
           </label>
         </div>
       </FormSection>
@@ -98,8 +105,8 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
         {hasMutuelle ? (
           <label className="mt-4 block text-sm font-medium text-slate-700">
             Nom de la mutuelle <span aria-hidden="true">*</span>
-            <input className={inputClass} defaultValue={initialValues.mutuelleName ?? ""} maxLength={patientLimits.mutuelleName} name="mutuelleName" required />
-            <FieldError message={state.fieldErrors.mutuelleName} />
+            <input aria-describedby={state.fieldErrors.mutuelleName ? "patient-mutuelle-error" : undefined} aria-invalid={Boolean(state.fieldErrors.mutuelleName)} className={inputClass} defaultValue={initialValues.mutuelleName ?? ""} maxLength={patientLimits.mutuelleName} name="mutuelleName" required />
+            <FieldError id="patient-mutuelle-error" message={state.fieldErrors.mutuelleName} />
           </label>
         ) : null}
       </FormSection>
@@ -109,8 +116,8 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
         {hasMedicalHistory ? (
           <label className="mt-4 block text-sm font-medium text-slate-700">
             Description <span aria-hidden="true">*</span>
-            <textarea className={inputClass} defaultValue={initialValues.medicalHistoryNotes ?? ""} maxLength={patientLimits.medicalNotes} name="medicalHistoryNotes" required rows={4} />
-            <FieldError message={state.fieldErrors.medicalHistoryNotes} />
+            <textarea aria-describedby={state.fieldErrors.medicalHistoryNotes ? "patient-medical-history-error" : undefined} aria-invalid={Boolean(state.fieldErrors.medicalHistoryNotes)} className={inputClass} defaultValue={initialValues.medicalHistoryNotes ?? ""} maxLength={patientLimits.medicalNotes} name="medicalHistoryNotes" required rows={4} />
+            <FieldError id="patient-medical-history-error" message={state.fieldErrors.medicalHistoryNotes} />
           </label>
         ) : null}
       </FormSection>
@@ -120,8 +127,8 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
         {hasAllergies ? (
           <label className="mt-4 block text-sm font-medium text-slate-700">
             Description <span aria-hidden="true">*</span>
-            <textarea className={inputClass} defaultValue={initialValues.allergyNotes ?? ""} maxLength={patientLimits.allergyNotes} name="allergyNotes" required rows={4} />
-            <FieldError message={state.fieldErrors.allergyNotes} />
+            <textarea aria-describedby={state.fieldErrors.allergyNotes ? "patient-allergies-error" : undefined} aria-invalid={Boolean(state.fieldErrors.allergyNotes)} className={inputClass} defaultValue={initialValues.allergyNotes ?? ""} maxLength={patientLimits.allergyNotes} name="allergyNotes" required rows={4} />
+            <FieldError id="patient-allergies-error" message={state.fieldErrors.allergyNotes} />
           </label>
         ) : null}
       </FormSection>
@@ -129,13 +136,13 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
       <FormSection description="Informations générales utiles au suivi, hors données dentaires futures." title="Remarques">
         <label className="block text-sm font-medium text-slate-700">
           Remarques générales
-          <textarea className={inputClass} defaultValue={initialValues.generalNotes ?? ""} maxLength={patientLimits.generalNotes} name="generalNotes" rows={4} />
-          <FieldError message={state.fieldErrors.generalNotes} />
+          <textarea aria-describedby={state.fieldErrors.generalNotes ? "patient-general-notes-error" : undefined} aria-invalid={Boolean(state.fieldErrors.generalNotes)} className={inputClass} defaultValue={initialValues.generalNotes ?? ""} maxLength={patientLimits.generalNotes} name="generalNotes" rows={4} />
+          <FieldError id="patient-general-notes-error" message={state.fieldErrors.generalNotes} />
         </label>
       </FormSection>
 
       <div className="flex justify-end border-t border-[var(--border)] pt-5">
-        <button className="rounded-md bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60" disabled={pending} type="submit">
+        <button className="min-h-11 rounded-md bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60" disabled={pending} type="submit">
           {pending ? "Enregistrement…" : submitLabel}
         </button>
       </div>
@@ -155,7 +162,7 @@ function FormSection({ children, description, title }: { children: React.ReactNo
 
 function BooleanChoice({ checked, label, name, onChange }: { checked: boolean; label: string; name: string; onChange: (checked: boolean) => void }) {
   return (
-    <label className="flex items-center gap-3 text-sm font-medium text-slate-700">
+    <label className="flex min-h-11 items-center gap-3 text-sm font-medium text-slate-700">
       <input checked={checked} className="size-4 accent-[var(--brand)]" name={name} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
       {label}
     </label>

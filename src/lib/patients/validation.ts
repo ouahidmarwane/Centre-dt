@@ -60,13 +60,24 @@ function checkbox(value: FormDataEntryValue | null) {
   return { valid: false, value: false } as const;
 }
 
-function isValidDateOfBirth(value: string) {
+function clinicDate(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Africa/Casablanca",
+    year: "numeric",
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function isValidDateOfBirth(value: string, now = new Date()) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
     return false;
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = clinicDate(now);
   return value >= "1900-01-01" && value <= today;
 }
 
@@ -167,12 +178,13 @@ export function isPatientId(value: string): boolean {
 }
 
 export function calculateAge(dateOfBirth: string | null, today = new Date()): number | null {
-  if (!dateOfBirth || !isValidDateOfBirth(dateOfBirth)) return null;
+  if (!dateOfBirth || !isValidDateOfBirth(dateOfBirth, today)) return null;
   const [year, month, day] = dateOfBirth.split("-").map(Number);
-  let age = today.getUTCFullYear() - year;
+  const [currentYear, currentMonth, currentDay] = clinicDate(today).split("-").map(Number);
+  let age = currentYear - year;
   const beforeBirthday =
-    today.getUTCMonth() + 1 < month ||
-    (today.getUTCMonth() + 1 === month && today.getUTCDate() < day);
+    currentMonth < month ||
+    (currentMonth === month && currentDay < day);
   if (beforeBirthday) age -= 1;
   return age;
 }

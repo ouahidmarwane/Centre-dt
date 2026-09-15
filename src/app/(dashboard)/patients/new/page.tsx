@@ -14,7 +14,7 @@ export default async function NewPatientPage() {
     <>
       <PageHeader
         action={
-          <Link className="text-sm font-semibold text-slate-600 hover:text-slate-900" href="/patients">
+          <Link className="inline-flex min-h-11 items-center text-sm font-semibold text-slate-600 hover:text-slate-900" href="/patients">
             Retour à la liste
           </Link>
         }

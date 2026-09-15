@@ -4,6 +4,7 @@ import {
   setUserActiveAction,
 } from "@/app/(dashboard)/security/actions";
 import type { SecurityCenterData, SecuritySeverity } from "@/lib/security/data";
+import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 
 const dateTime = new Intl.DateTimeFormat("fr-MA", {
   dateStyle: "medium",
@@ -50,7 +51,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 
 function Confirmation() {
   return (
-    <label className="flex items-start gap-2 text-xs text-slate-600">
+    <label className="flex min-h-11 items-center gap-2 text-xs text-slate-600">
       <input
         className="mt-0.5 size-4"
         name="confirmation"
@@ -95,7 +96,7 @@ export function SecurityCenter({
             ["#users", "Utilisateurs"],
           ].map(([href, label]) => (
             <a
-              className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 hover:border-[var(--brand)]"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--border)] bg-white px-3 py-1.5 hover:border-[var(--brand)]"
               href={href}
               key={href}
             >
@@ -255,9 +256,7 @@ export function SecurityCenter({
             </select>
           </label>
           <div className="lg:col-span-2"><Confirmation /></div>
-          <button className="min-h-11 rounded-md bg-[var(--danger)] px-4 text-sm font-semibold text-white hover:opacity-90" type="submit">
-            Ajouter la règle IP
-          </button>
+          <PendingSubmitButton className="min-h-11 rounded-md bg-[var(--danger)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" pendingLabel="Ajout…">Ajouter la règle IP</PendingSubmitButton>
         </form>
         <div className="mt-5 space-y-3">
           {data.ipPolicies.length ? (
@@ -281,7 +280,7 @@ export function SecurityCenter({
                   <form action={disableIpPolicyAction} className="grid shrink-0 gap-2">
                     <input name="blockId" type="hidden" value={policy.id} />
                     <Confirmation />
-                    <button className="min-h-10 rounded-md border border-slate-300 px-3 text-sm font-semibold hover:bg-slate-50" type="submit">Désactiver la règle</button>
+                    <PendingSubmitButton className="min-h-11 rounded-md border border-slate-300 px-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60" pendingLabel="Désactivation…">Désactiver la règle</PendingSubmitButton>
                   </form>
                 ) : null}
               </article>
@@ -318,9 +317,9 @@ export function SecurityCenter({
                 <input name="userId" type="hidden" value={user.id} />
                 <input name="nextState" type="hidden" value={user.isActive ? "inactive" : "active"} />
                 <Confirmation />
-                <button className={`min-h-10 rounded-md px-3 text-sm font-semibold ${user.isActive ? "border border-red-200 text-red-800 hover:bg-red-50" : "bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)]"}`} type="submit">
+                <PendingSubmitButton className={`min-h-11 rounded-md px-3 text-sm font-semibold disabled:opacity-60 ${user.isActive ? "border border-red-200 text-red-800 hover:bg-red-50" : "bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)]"}`} pendingLabel="Modification…">
                   {user.isActive ? "Désactiver l’accès" : "Réactiver l’accès"}
-                </button>
+                </PendingSubmitButton>
               </form>
             </article>
           ))}

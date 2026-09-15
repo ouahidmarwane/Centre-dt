@@ -74,5 +74,6 @@ test("patient identifiers and derived age are validated", () => {
   assert.equal(isPatientId("../../patients"), false);
   assert.equal(calculateAge("2000-09-13", new Date("2026-09-12T12:00:00Z")), 25);
   assert.equal(calculateAge("2000-09-12", new Date("2026-09-12T12:00:00Z")), 26);
+  assert.equal(calculateAge("2000-09-13", new Date("2026-09-12T23:30:00Z")), 26);
   assert.equal(calculateAge(null), null);
 });

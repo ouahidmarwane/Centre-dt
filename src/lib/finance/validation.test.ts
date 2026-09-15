@@ -18,8 +18,17 @@ test("validates intervention fields, FDI teeth and finding UUIDs",()=>{
 test("validates payments, idempotency and reversal reasons",()=>{
   const good=validatePaymentForm(form({amount:"200.00",method:"cash",receivedAt:"2026-09-12T10:00",idempotencyKey:uuid}),new Date("2026-09-12T12:00:00Z"));
   assert.equal(good.success,true);
+  if(good.success) assert.equal(good.data.receivedAt,"2026-09-12T09:00:00.000Z");
   assert.equal(validatePaymentForm(form({amount:"-1",method:"coin",receivedAt:"later",idempotencyKey:"bad"})).success,false);
   assert.equal(validateReason(" erreur de saisie "),"erreur de saisie");
   assert.equal(validateReason("non"),null);
   assert.equal(isFinanceId(uuid),true); assert.equal(isFinanceId("bad"),false);
+});
+test("interprets finance dates in Africa/Casablanca rather than the server timezone",()=>{
+  const nearMidnight=new Date("2026-09-12T23:30:00Z");
+  const intervention=validateInterventionForm(form({performedAt:"2026-09-13",nature:"Contrôle",amountDue:"0",status:"performed"}),nearMidnight);
+  assert.equal(intervention.success,true);
+  const payment=validatePaymentForm(form({amount:"10",method:"cash",receivedAt:"2026-09-13T00:15",idempotencyKey:uuid}),nearMidnight);
+  assert.equal(payment.success,true);
+  if(payment.success) assert.equal(payment.data.receivedAt,"2026-09-12T23:15:00.000Z");
 });

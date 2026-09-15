@@ -83,7 +83,7 @@ export function AccountingDashboard({
             {presets.map(([preset, label]) => (
               <Link
                 aria-current={period.preset === preset ? "page" : undefined}
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${period.preset === preset ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--border)] text-slate-700 hover:bg-slate-50"}`}
+                className={`inline-flex min-h-11 items-center rounded-md border px-3 py-2 text-sm font-semibold ${period.preset === preset ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--border)] text-slate-700 hover:bg-slate-50"}`}
                 href={`/accounting?period=${preset}`}
                 key={preset}
               >
@@ -96,13 +96,13 @@ export function AccountingDashboard({
           <input name="period" type="hidden" value="custom" />
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Du
-            <input className="rounded-md border border-[var(--border)] bg-white px-3 py-2" defaultValue={period.preset === "custom" ? period.startDate : ""} max="9999-12-31" min="2020-01-01" name="from" required type="date" />
+            <input className="min-h-11 rounded-md border border-[var(--border)] bg-white px-3 py-2" defaultValue={period.preset === "custom" ? period.startDate : ""} max="9999-12-31" min="2020-01-01" name="from" required type="date" />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Au
-            <input className="rounded-md border border-[var(--border)] bg-white px-3 py-2" defaultValue={period.preset === "custom" ? inclusiveEndDate(period) : ""} max="9999-12-31" min="2020-01-01" name="to" required type="date" />
+            <input className="min-h-11 rounded-md border border-[var(--border)] bg-white px-3 py-2" defaultValue={period.preset === "custom" ? inclusiveEndDate(period) : ""} max="9999-12-31" min="2020-01-01" name="to" required type="date" />
           </label>
-          <button className="rounded-md bg-[var(--brand-strong)] px-4 py-2 font-semibold text-white hover:bg-[var(--brand)]" type="submit">Appliquer</button>
+          <button className="min-h-11 rounded-md bg-[var(--brand-strong)] px-4 py-2 font-semibold text-white hover:bg-[var(--brand)]" type="submit">Appliquer</button>
         </form>
         <p className="mt-2 text-xs text-slate-500">Plage personnalisée maximale: cinq ans. Les bornes utilisent l’intervalle technique [début, fin).</p>
       </section>

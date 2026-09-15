@@ -59,7 +59,7 @@ export function PatientList({ initialState }: { initialState: PatientSearchState
                     <td className="px-4 py-3 text-slate-700">{patient.has_mutuelle ? patient.mutuelle_name : "Aucune"}</td>
                     <td className="px-4 py-3"><StatusBadge active={patient.is_active} /></td>
                     <td className="px-4 py-3 text-slate-600">{dateFormatter.format(new Date(patient.updated_at))}</td>
-                    <td className="px-4 py-3 text-right"><Link className="font-semibold text-[var(--brand-strong)] hover:underline" href={`/patients/${patient.id}`}>Consulter</Link></td>
+                    <td className="px-4 py-3 text-right"><Link className="inline-flex min-h-11 items-center font-semibold text-[var(--brand-strong)] hover:underline" href={`/patients/${patient.id}`}>Consulter</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -71,7 +71,7 @@ export function PatientList({ initialState }: { initialState: PatientSearchState
               <article className="rounded-lg border border-[var(--border)] bg-white p-4" key={patient.id}>
                 <div className="flex items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900">{patient.first_name} {patient.last_name}</h2><p className="mt-1 text-sm text-slate-600">{patient.phone}</p></div><StatusBadge active={patient.is_active} /></div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-[var(--muted)]">Âge</dt><dd>{ageLabel(patient.date_of_birth)}</dd></div><div><dt className="text-[var(--muted)]">Mutuelle</dt><dd>{patient.has_mutuelle ? patient.mutuelle_name : "Aucune"}</dd></div></dl>
-                <Link className="mt-4 inline-flex font-semibold text-[var(--brand-strong)]" href={`/patients/${patient.id}`}>Consulter le dossier</Link>
+                <Link className="mt-4 inline-flex min-h-11 items-center font-semibold text-[var(--brand-strong)]" href={`/patients/${patient.id}`}>Consulter le dossier</Link>
               </article>
             ))}
           </div>
