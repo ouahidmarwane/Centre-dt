@@ -11,7 +11,8 @@ const fail=(message:string):FinanceActionState=>({success:false,message,fieldErr
 export async function createInterventionAction(patientId:string,_state:FinanceActionState,formData:FormData):Promise<FinanceActionState>{
   await requirePermission("interventions.write"); if(!isPatientId(patientId)) return fail("Dossier patient invalide.");
   const validation=validateInterventionForm(formData); if(!validation.success) return {success:false,message:"Vérifiez les informations indiquées.",fieldErrors:validation.fieldErrors};
-  const d=validation.data,supabase=await createClient(); const {error}=await supabase.rpc("create_intervention",{target_patient_id:patientId,target_performed_at:d.performedAt,target_nature:d.nature,target_amount_due:Number(d.amountDue),target_status:d.status,target_notes:d.notes??undefined,target_teeth:d.teeth,target_finding_ids:d.findingIds});
+  const idempotencyKey=formData.get("idempotencyKey"); if(!isFinanceId(idempotencyKey)) return fail("Jeton de soumission invalide. Rechargez la page et réessayez.");
+  const d=validation.data,supabase=await createClient(); const {error}=await supabase.rpc("create_intervention",{target_patient_id:patientId,target_performed_at:d.performedAt,target_nature:d.nature,target_amount_due:Number(d.amountDue),target_status:d.status,target_idempotency_key:idempotencyKey,target_notes:d.notes??undefined,target_teeth:d.teeth,target_finding_ids:d.findingIds});
   if(error) return fail("L’intervention n’a pas pu être enregistrée."); revalidatePath(`/patients/${patientId}`); return {success:true,message:"Intervention enregistrée.",fieldErrors:{}};
 }
 export async function updateInterventionAction(patientId:string,interventionId:string,_state:FinanceActionState,formData:FormData):Promise<FinanceActionState>{

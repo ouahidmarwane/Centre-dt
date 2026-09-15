@@ -229,13 +229,13 @@ export function SecurityCenter({
         className="scroll-mt-24 rounded-lg border border-[var(--border)] bg-white p-5 shadow-xs sm:p-6"
         id="ip-policies"
       >
-        <h2 className="text-xl font-semibold text-slate-950">Règles de blocage IP</h2>
+        <h2 className="text-xl font-semibold text-slate-950">Politiques IP applicatives</h2>
         <p className="mt-1 max-w-4xl text-sm text-[var(--muted)]">
-          Ce registre prépare de futures règles pour une couche réseau de confiance (edge/WAF).
+          Ce registre documente les adresses à traiter par une future couche réseau de confiance (edge/WAF).
           Une IP n’identifie pas une personne et peut représenter plusieurs utilisateurs.
         </p>
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Enforcement infrastructure pending — aucun blocage réseau actif dans Milestone 09.
+          Registre applicatif uniquement — aucun blocage edge/réseau actif. La synchronisation Vercel Firewall est reportée à M13.
         </p>
         <form
           action={createIpPolicyAction}
@@ -267,7 +267,7 @@ export function SecurityCenter({
                     <p className="font-mono font-semibold">{policy.ipAddress}</p>
                     <span className={`rounded-full px-2 py-1 text-xs font-bold ${policy.isActive ? "bg-amber-50 text-amber-900" : "bg-slate-100 text-slate-600"}`}>
                       {policy.isActive
-                        ? "Règle active — enforcement pending"
+                        ? "Politique active — enforcement edge pending"
                         : "Règle inactive ou expirée"}
                     </span>
                   </div>

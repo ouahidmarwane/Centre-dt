@@ -480,6 +480,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          idempotency_key: string
           nature: string
           notes: string | null
           patient_id: string
@@ -495,6 +496,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          idempotency_key: string
           nature: string
           notes?: string | null
           patient_id: string
@@ -510,6 +512,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          idempotency_key?: string
           nature?: string
           notes?: string | null
           patient_id?: string
@@ -1096,19 +1099,34 @@ export type Database = {
         }
         Returns: string
       }
-      create_intervention: {
-        Args: {
-          target_amount_due: number
-          target_finding_ids?: string[]
-          target_nature: string
-          target_notes?: string
-          target_patient_id: string
-          target_performed_at: string
-          target_status: Database["public"]["Enums"]["intervention_status"]
-          target_teeth?: number[]
-        }
-        Returns: string
-      }
+      create_intervention:
+        | {
+            Args: {
+              target_amount_due: number
+              target_finding_ids?: string[]
+              target_idempotency_key: string
+              target_nature: string
+              target_notes?: string
+              target_patient_id: string
+              target_performed_at: string
+              target_status: Database["public"]["Enums"]["intervention_status"]
+              target_teeth?: number[]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              target_amount_due: number
+              target_finding_ids?: string[]
+              target_nature: string
+              target_notes?: string
+              target_patient_id: string
+              target_performed_at: string
+              target_status: Database["public"]["Enums"]["intervention_status"]
+              target_teeth?: number[]
+            }
+            Returns: string
+          }
       create_invoice: {
         Args: {
           target_idempotency_key: string

@@ -19,3 +19,12 @@ test("security route authorizes before loading its bounded server read model", a
   assert.doesNotMatch(proxy, /check_ip_block|observe_current_session/);
   assert.match(layout, /requireUser\(\)[\s\S]*?observeCurrentSession\(/);
 });
+
+test("proxy bypasses static media and retains session/CSP coverage for routes", async () => {
+  const proxy = await readFile(path.join(process.cwd(), "src/proxy.ts"), "utf8");
+  assert.match(proxy, /mp4\|webm\|ogg\|mp3\|wav\|m4a/);
+  assert.match(proxy, /refreshSession\(request/);
+  assert.match(proxy, /buildContentSecurityPolicy/);
+  assert.doesNotMatch(proxy, /x-forwarded-for["']/i);
+  assert.doesNotMatch(proxy, /x-real-ip["']/i);
+});

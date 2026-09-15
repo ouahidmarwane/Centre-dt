@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/login", headers: privateNoStoreHeaders },
+      { source: "/", headers: privateNoStoreHeaders },
+      { source: "/forbidden", headers: privateNoStoreHeaders },
       { source: "/dashboard/:path*", headers: privateNoStoreHeaders },
       { source: "/patients/:path*", headers: privateNoStoreHeaders },
       { source: "/appointments/:path*", headers: privateNoStoreHeaders },
