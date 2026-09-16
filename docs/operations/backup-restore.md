@@ -1,5 +1,163 @@
 # Sauvegarde et restauration — opérateur
 
+## M15 — procédure réellement vérifiée le 16 septembre 2026
+
+Une archive custom `public/private` a été créée hors dépôt après préflight
+libpq `verify-full` et confirmation TLS côté client par `psql`. Source :
+PostgreSQL 17.6 ; clients PostgreSQL officiels 17.11 déjà présents dans l'image
+locale `docker.io/library/postgres:17`, utilisés avec Podman 5.8.4. Aucun outil
+installé, aucun chemin `supabase db dump` non vérifié utilisé, aucun secret
+de connexion affiché. Le CA original a seulement été monté read-only.
+
+Le contrôle des labels empêchait la lecture du bind mount. `label=disable`
+a été limité aux conteneurs éphémères, sans modifier le certificat ni SELinux
+système ; clients read-only, capabilities retirées et no-new-privileges.
+Ce compromis local doit être relu sur tout autre poste. TLS n'a jamais été
+désactivé. `pg_stat_ssl` côté serveur derrière le pooler ne prouve pas le TLS
+du frontend : c'est `psql` côté client et `verify-full` qui ont été contrôlés.
+
+### Export reproductible — nouvelle autorisation pour toute nouvelle exécution
+
+Référence Bash, non exécutée automatiquement. Saisir les métadonnées depuis
+la connexion session-pooler vérifiée, sans URL avec password. Ne jamais sourcer
+`.env.local` comme du code shell ni publier les sorties de connexion.
+
+```bash
+set -euo pipefail
+umask 077
+task_repo="$(git rev-parse --show-toplevel)"
+task_root=/home/miro/centre-dentaire-ouahid-backups
+task_root="$(realpath -- "$task_root")"  # destination existante approuvée
+case "$task_root/" in "$task_repo/"*) exit 1 ;; esac
+test -r "$task_repo/supabase/.temp/prod-ca-2021.crt"
+read -rp 'Host session-pooler vérifié : ' PGHOST
+read -rp 'Port session-pooler vérifié : ' PGPORT
+read -rp 'Utilisateur PostgreSQL : ' PGUSER
+read -rp 'Base source vérifiée : ' PGDATABASE
+read -rsp 'Password DB (non affiché) : ' PGPASSWORD
+echo
+export PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
+export PGSSLMODE=verify-full PGSSLROOTCERT=/run/supabase-ca.crt
+export PGCONNECT_TIMEOUT=10 PGOPTIONS='-c default_transaction_read_only=on'
+trap 'unset PGPASSWORD' EXIT
+task_client=(podman run --rm --pull=never --read-only --cap-drop=all
+  --security-opt=no-new-privileges --security-opt=label=disable --network=host
+  --mount "type=bind,src=$task_repo/supabase/.temp/prod-ca-2021.crt,target=/run/supabase-ca.crt,ro"
+  --env PGHOST --env PGPORT --env PGUSER --env PGDATABASE --env PGPASSWORD
+  --env PGSSLMODE --env PGSSLROOTCERT --env PGCONNECT_TIMEOUT --env PGOPTIONS)
+"${task_client[@]}" docker.io/library/postgres:17 psql -X -w -v ON_ERROR_STOP=1 \
+  -c '\conninfo' -c 'BEGIN READ ONLY; SELECT 1; ROLLBACK;'
+# STOP si échec ou TLS côté client non confirmé ; aucun downgrade.
+task_stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+task_dir="$(mktemp -d "$task_root/m15-$task_stamp-XXXXXX")"
+"${task_client[@]}" --mount "type=bind,src=$task_dir,target=/backup,rw" \
+  docker.io/library/postgres:17 pg_dump --no-password --format=custom \
+  --schema=public --schema=private --strict-names --lock-wait-timeout=10000 \
+  --file=/backup/application.dump
+chmod 600 "$task_dir/application.dump"
+test -s "$task_dir/application.dump"
+podman run --rm --pull=never --read-only --network=none --cap-drop=all \
+  --security-opt=no-new-privileges --security-opt=label=disable \
+  --mount "type=bind,src=$task_dir,target=/backup,ro" \
+  docker.io/library/postgres:17 pg_restore --list /backup/application.dump >/dev/null
+sha256sum "$task_dir/application.dump"
+unset PGPASSWORD
+```
+
+Conserver timestamp UTC, commit, versions, schémas, taille et SHA-256 sans
+credential. L'exécution M15 a aussi conservé un snapshot exporté en transaction
+read-only repeatable-read pour comparer les counts à ceux de l'archive.
+`pg_dump --snapshot` a utilisé ce snapshot ; aucun changement source.
+Les rôles globaux ne sont pas exportés par ce périmètre : prévoir les rôles
+de plateforme dans la cible, sans mot de passe ni clé privilégiée dans le dépôt.
+
+### Répétition de restauration vérifiée, portée limitée
+
+Nouveaux conteneurs PostgreSQL 17.11 sans réseau (`--network=none`), aucun
+port publié, base `m15_restore` accessible uniquement par socket Unix interne,
+données en tmpfs. Identité/version/cible vide contrôlées avant restore. Archive
+montée read-only ; aucune connexion distante de restauration.
+
+Prérequis locaux : rôles NOLOGIN nécessaires aux ACL, extensions `pg_trgm`,
+`pgcrypto`, `uuid-ossp` dans `extensions`, définitions de `auth.uid()` et
+`auth.jwt()`, et table `auth.users(id uuid primary key)` minimale. Les UUID
+d'ancrage ont été dérivés des profils restaurés, sans importer GoTrue users,
+passwords, sessions ou facteurs. Ce substitut ne permet aucune authentification
+réelle et ne prouve PAS une récupération d'identité Supabase.
+
+Restore PostgreSQL natif par sections pre-data, data et post-data, chacune avec
+`--exit-on-error --single-transaction`. Ancrages FK créés entre data/post-data.
+Le grant USAGE public attendu par pg_dump sur un schéma public initialisé a
+été reproduit uniquement parce qu'il existait à la source, avec son grantor
+`pg_database_owner` ; pas de grant supplémentaire. ACL comparées avec leurs
+defaults résolus et sans dépendance à l'ordre/collation. Les 28 CHECK dont
+le déparseur a aplati les AND ont été reparsés par PostgreSQL sur des tables
+temporaires vides, sans modifier les données restaurées : même expression cible.
+
+Résultat final : 24 tables, 55 fonctions (définitions/search_path/SECURITY DEFINER),
+173 contraintes, 83 index, 11 triggers, 26 politiques et comptes de lignes
+correspondants. Aucun SECURITY DEFINER sans search_path. Vérifications financières
+read-only : aucun paiement invalide, intervention négative, incohérence de total
+facture/reçu ou surpaiement détecté ; ces tables sont vides, donc aucune preuve
+transactionnelle sur données non vides n'est revendiquée.
+Tous les conteneurs créés ont été supprimés et leurs tmpfs détruits ; archive
+et preuves externes conservées. Aucun restore production.
+
+### Chiffrement, copie externe et couverture — vérifications terminées
+
+Vérification M15.1 réussie, puis finalisation opérateur confirmée : chiffrement
+symétrique GPG AES256, déchiffrement réussi, SHA-256 du contenu déchiffré identique
+à l'original et `pg_restore --list` réussi sur cette archive déchiffrée. La copie
+temporaire déchiffrée a été supprimée après ces contrôles.
+
+Archive chiffrée locale conservée :
+`/home/miro/centre-dentaire-ouahid-backups/m15-2026-09-16T12-08-02-396Z-gM5rtN/application.dump.gpg`.
+Droits locaux vérifiés après finalisation : `600`, propriétaire `miro:miro`.
+
+| Artefact vérifié | SHA-256 |
+| --- | --- |
+| Original `application.dump` avant suppression, identique au contenu déchiffré | `cc2ebd6f1494bd9887e791686f8183ee9e9aa1fd9a6b823318ca1be1762b7086` |
+| Archive chiffrée locale et seconde copie externe | `5c5a8c9980c562001de649dfc2792e8d46f40b463f8ff9f0552e1b754cff3439` |
+
+Seconde copie chiffrée sur HDD WDC WD2500BEVT-22ZCT0 250 GB, monté lors du
+contrôle à `/run/media/miro/B8FEFB7FFEFB346A/`, destination
+`Centre-Dentaire-Ouahid-Backups/application.dump.gpg`. Son SHA-256 a été calculé
+indépendamment et correspond exactement à celui de l'archive chiffrée locale.
+Après `sync`, le disque a été démonté avec succès, mis hors tension puis
+physiquement déconnecté. Ce contrôle ne démontre pas un lieu de stockage
+géographiquement hors site.
+
+Le fichier clair persistant
+`/home/miro/centre-dentaire-ouahid-backups/m15-2026-09-16T12-08-02-396Z-gM5rtN/application.dump`
+a été explicitement supprimé seulement après validation locale du chiffrement,
+du déchiffrement, de l'équivalence du hash clair, de l'archive et du checksum
+externe. Il s'agit d'une suppression de fichier, PAS d'un effacement physique
+sécurisé : Btrfs/SSD, CoW, TRIM et snapshots peuvent affecter la récupérabilité.
+
+Les bits Unix permissifs affichés pour le disque NTFS ne prouvent aucune
+protection par `chmod` ; la confidentialité de la copie externe repose sur le
+chiffrement GPG et sa phrase secrète. Ne jamais demander, documenter ou stocker
+cette phrase dans Git ; la gérer séparément du backup, par procédure opérateur.
+
+| Composant | Sauvegardé ici ? | Restaurable seul ? | Reprise séparée |
+| --- | --- | --- | --- |
+| Tables/données public/private, RLS, RPC, index, triggers | Oui | Avec prérequis de plateforme | Vérification cible/grants |
+| Rôles globaux et extensions hors périmètre | Non | Non | Provisionnement compatible |
+| Historique migrations | Dans Git au commit identifié, pas dans cette archive | Non depuis cette archive | Réconciliation revue |
+| GoTrue utilisateurs/passwords/sessions | Non | Non | Stratégie d'identité autorisée |
+| MFA et facteurs utilisables | Non | Non | Identité vérifiée puis réenrôlement administrativement approuvé |
+| Objets Storage/configuration Dashboard/secrets externes | Non | Non | Récupération séparée |
+
+Gate 2 Backup/TLS : CLOSED techniquement. Gate 3 Restore rehearsal : CLOSED
+techniquement, dans le périmètre applicatif limité décrit ci-dessus.
+Chiffrement/vérification de copie externe : CLOSED. Le travail technique M15
+de sauvegarde/récupération applicative est terminé, mais ne constitue PAS une
+récupération complète de plateforme ou d'identité Supabase. M15 seul ne rend
+pas un déploiement production prêt : hébergement, configuration production et
+smoke tests restent des gates séparés ; aucune autorisation de déploiement.
+Les sections M14/M14.1 ci-dessous sont historiques
+et décrivent le chemin CLI non utilisé, pas une méthode désormais autorisée.
+
 Aucun export réel ni restore effectué en M14. Propriétaire + suppléant doivent
 désigner un emplacement absolu HORS checkout, chiffré et hors site, et vérifier
 les accès avant le premier patient réel. Ne pas stocker SQL, certificats,
