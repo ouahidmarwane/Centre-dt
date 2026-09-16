@@ -1,8 +1,9 @@
 # Centre Dentaire Ouahid
 
 Plateforme interne de gestion du Centre Dentaire Ouahid. Elle réunit une
-fondation d'authentification et d'autorisation privée avec un premier module de
-gestion sécurisée des patients.
+fondation d'authentification et d'autorisation privée avec patients, odontogramme,
+interventions/paiements, rendez-vous/rappels manuels, ordonnances, documents
+financiers, dashboards et Security Center. Le docteur est protégé par MFA AAL2.
 
 ## Stack
 
@@ -10,7 +11,7 @@ gestion sécurisée des patients.
 - TypeScript strict
 - Tailwind CSS 4
 - Supabase Auth, PostgreSQL et Row Level Security
-- Vercel prévu pour le déploiement
+- Hébergement de production à approuver (Vercel Hobby : usage non commercial)
 
 ## Développement local
 
@@ -99,48 +100,33 @@ téléphone, adresse, antécédent ou allergie.
 
 ## Migrations Supabase
 
-Les migrations reproductibles sont dans `supabase/migrations/`. Elles n'ont pas
-été appliquées automatiquement à un projet distant.
+Les migrations historiques approuvées et appliquées sont dans
+`supabase/migrations/`. Ne jamais les réécrire. La préparation M14 vérifie
+seulement l'alignement ; elle n'applique aucune migration.
 
 Avec le CLI officiel Supabase authentifié :
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <project-ref>
-npx supabase db push --dry-run
-npx supabase db push
+npx --no-install supabase db lint --linked
+npx --no-install supabase db push --linked --dry-run
 ```
 
-Inspecter le projet et la sortie du `--dry-run` avant la dernière commande. Les
-migrations créent `profiles`, `audit_logs`, `security_events`, `blocked_ips`,
-`user_sessions` et `patients`, activent RLS et appliquent des grants minimaux.
+Vérifier la cible déjà liée avant ces diagnostics. Aucun `db push` réel sans
+autorisation distincte, sauvegarde et revue du dry-run. Les tables applicatives
+utilisent RLS/grants minimaux et les mutations métier des RPC contrôlées.
 
-### Premier compte docteur
+### Comptes staff
 
-Créer le compte depuis Supabase Dashboard → Authentication → Users, sans
-ajouter de page d'inscription. Le trigger crée volontairement le profil avec le
-rôle le moins privilégié, `assistant`. Après avoir vérifié l'UUID exact du
-compte, promouvoir le premier docteur depuis le SQL Editor avec une opération
-administrative explicite :
-
-```sql
-update public.profiles
-set role = 'doctor', full_name = '<nom du docteur>'
-where id = '<uuid auth.users vérifié>';
-```
-
-Ne jamais exposer cette opération au navigateur.
+Les comptes ont été préparés dans les jalons approuvés. Toute création,
+promotion, désactivation ou récupération est une opération administrative
+explicitement autorisée, jamais une action navigateur privilégiée. Voir les
+procédures opérateur ci-dessous ; aucune modification de compte en M14.
 
 ## Types de base de données
 
-Le fichier de types n'est pas fabriqué manuellement : il doit refléter le schéma
-effectivement appliqué. Après liaison au bon projet, le générer avec :
-
-```bash
-npx supabase gen types --lang typescript --linked --schema public > src/types/database.types.ts
-```
-
-Le dossier `src/types` existe pour recevoir ce fichier.
+Les types générés dans `src/types/database.types.ts` reflètent les jalons
+appliqués. Ne pas les fabriquer ni les régénérer en changeant implicitement
+le périmètre des schémas. M14 n'introduit aucun changement de schéma/types.
 
 ## Fondations de sécurité
 
@@ -149,24 +135,31 @@ Le dossier `src/types` existe pour recevoir ce fichier.
 - `blocked_ips` utilise le type PostgreSQL `inet`; seules des adresses observées
   dans un contexte serveur de confiance doivent y être enregistrées.
 - L'extraction d'IP ne lit `x-vercel-forwarded-for` que lorsque `VERCEL=1`,
-  valide IPv4/IPv6 et renvoie `null` localement. Une IP partagée/NAT ne
+  et `VERCEL_ENV=production`, valide IPv4/IPv6 et renvoie `null` sinon. Une IP partagée/NAT ne
   représente jamais une personne et le blocage IP reste un signal secondaire.
 - `user_sessions` est un journal d'activité compagnon. Il ne remplace pas
   `auth.sessions` et marquer une ligne comme terminée ne révoque aucun jeton.
 - Une vraie révocation doit agir sur Supabase Auth. Un access token déjà émis
-  peut rester valable jusqu'à son expiration; les actions les plus sensibles
-  devront aussi vérifier l'existence du `session_id` dans `auth.sessions`.
+  peut rester valable jusqu'à son expiration. Consulter la doctrine sécurité
+  actuelle pour les contrôles de sessions et AAL2, sans assimiler durée JWT
+  et durée de session.
 - Le contrat `DurableRateLimiter` est prêt pour un stockage partagé. Il n'existe
   volontairement aucun fallback en mémoire, inadapté à Vercel. La connexion
   s'appuie pour l'instant sur les protections Supabase Auth; un fournisseur
-  durable devra être choisi avant les endpoints sensibles de production.
+  durable pré-auth applicatif et l'enforcement edge des politiques IP restent
+  des limites à ne pas présenter comme déjà déployées.
 - Les entrées de connexion sont validées côté serveur, les erreurs restent
   génériques, aucune donnée utilisateur n'est rendue comme HTML brut et aucune
   destination de redirection fournie par le client n'est acceptée.
 
-## Limites actuelles
+## Production et opérations
 
-L'odontogramme, les interventions, paiements, ordonnances, factures,
-rendez-vous et rappels ne sont pas encore implémentés. La supervision de
-sessions, le blocage effectif des requêtes et le rate limiting durable restent
-également prévus pour des jalons ultérieurs.
+M14 est une préparation, pas un déploiement. Aucun backup réel ou restore
+n'est effectué ; hébergement éligible, backup chiffré/TLS prouvé, répétition
+de restauration et vérifications opérateur restent des gates de production.
+
+- [Plan de déploiement et smoke tests](docs/operations/production-deployment.md)
+- [Sauvegarde et restauration](docs/operations/backup-restore.md)
+- [Incidents, offboarding et récupération MFA](docs/operations/incident-response.md)
+- [Doctrine sécurité actuelle](src/lib/security/README.md)
+- [Doctrine MFA](src/lib/auth/MFA.md)

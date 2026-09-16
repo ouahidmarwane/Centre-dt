@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { getSupabaseEnvironment } from "./src/lib/supabase/env";
+
+// Validate build configuration without depending on runtime-only platform flags.
+getSupabaseEnvironment();
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.21"],

@@ -46,3 +46,10 @@ next-env.d.ts
 
 # Supabase CLI local state
 /supabase/.temp/
+
+# Operator exports must live outside this checkout; defense-in-depth only.
+/backups/
+/database-exports/
+/supabase/backups/
+*.dump
+*.backup
