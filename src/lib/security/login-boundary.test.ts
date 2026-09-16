@@ -14,7 +14,8 @@ test("login failures retain one generic non-enumerating response", async () => {
   assert.match(source, /const genericLoginError\s*=/);
   assert.match(source, /if \(!fields\.success\)[\s\S]*?genericLoginError/);
   assert.match(source, /if \(error \|\| !data\.user\)[\s\S]*?genericLoginError/);
-  assert.match(source, /if \(profileError \|\| !profile\?\.is_active\)[\s\S]*?genericLoginError/);
+  assert.match(source, /destination = await getLoginDestination\(\)/);
+  assert.match(source, /if \(!destination \|\| destination === "\/login"\)[\s\S]*?signOut[\s\S]*?genericLoginError/);
   assert.match(source, /catch \{[\s\S]*?genericLoginError/);
   assert.doesNotMatch(source, /console\.(?:log|error|warn)|service[_-]?role/i);
 });

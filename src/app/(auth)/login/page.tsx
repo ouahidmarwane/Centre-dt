@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { getAuthState } from "@/lib/auth/server";
+import { getLoginDestination } from "@/lib/auth/server";
 
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Connexion" };
 
 export default async function LoginPage() {
-  const authState = await getAuthState();
-
-  if (authState.status === "authenticated") {
-    redirect("/dashboard");
-  }
+  const destination = await getLoginDestination();
+  if (destination) redirect(destination);
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.72fr)]">

@@ -12,6 +12,7 @@ const protectedRoutes = [
   "/appointments",
   "/accounting",
   "/security",
+  "/mfa",
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {
@@ -32,6 +33,9 @@ function applyResponsePolicy(response: NextResponse, pathname: string, policy: R
   if (isPrivateNoStorePath(pathname)) {
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
     response.headers.set("Pragma", "no-cache");
+  }
+  if (pathname === "/mfa" || pathname.startsWith("/mfa/")) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   return response;
 }
@@ -79,6 +83,8 @@ export async function refreshSession(request: NextRequest, policy: ResponsePolic
 
   if (
     pathname.endsWith("/print") ||
+    pathname === "/mfa" ||
+    pathname.startsWith("/mfa/") ||
     pathname === "/accounting" ||
     pathname.startsWith("/accounting/") ||
     pathname === "/security" ||

@@ -1206,6 +1206,13 @@ export type Database = {
         }[]
       }
       get_main_dashboard: { Args: { reference_time?: string }; Returns: Json }
+      get_mfa_bootstrap_profile: {
+        Args: never
+        Returns: {
+          is_active: boolean
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_patient_financial_summary: {
         Args: { target_patient_id: string }
         Returns: {

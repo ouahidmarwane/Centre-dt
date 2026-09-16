@@ -46,6 +46,8 @@ export function isPrivateNoStorePath(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/login" ||
+    pathname === "/mfa" ||
+    pathname.startsWith("/mfa/") ||
     pathname === "/forbidden" ||
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/") ||

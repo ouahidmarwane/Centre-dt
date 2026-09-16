@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { getLoginDestination } from "@/lib/auth/server";
 import { validateLoginFields } from "@/lib/auth/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,6 +26,7 @@ export async function loginAction(
     return { error: genericLoginError };
   }
 
+  let destination: string | null = null;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword(fields.data);
@@ -33,24 +35,15 @@ export async function loginAction(
       return { error: genericLoginError };
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("is_active")
-      .eq("id", data.user.id)
-      .maybeSingle();
-
-    if (profileError || !profile?.is_active) {
-      if (!profileError && profile?.is_active === false) {
-        await supabase.rpc("record_inactive_account_denied");
-      }
+    await supabase.rpc("observe_current_session");
+    destination = await getLoginDestination();
+    if (!destination || destination === "/login") {
       await supabase.auth.signOut({ scope: "local" });
       return { error: genericLoginError };
     }
-
-    await supabase.rpc("observe_current_session");
   } catch {
     return { error: genericLoginError };
   }
 
-  redirect("/dashboard");
+  redirect(destination);
 }
