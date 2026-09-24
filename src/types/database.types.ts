@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_reminder_notifications: {
+        Row: {
+          appointment_id: string
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          next_attempt_at: string
+          reminder_type: Database["public"]["Enums"]["appointment_reminder_type"]
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          reminder_type: Database["public"]["Enums"]["appointment_reminder_type"]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          reminder_type?: Database["public"]["Enums"]["appointment_reminder_type"]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminder_notifications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_reminders: {
         Row: {
           appointment_id: string
@@ -99,6 +149,69 @@ export type Database = {
           },
           {
             foreignKeyName: "appointment_revisions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_waitlist: {
+        Row: {
+          booked_appointment_id: string | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          id: string
+          is_urgent: boolean
+          notes: string | null
+          patient_id: string
+          preferred_period: string
+          reason: string
+          status: string
+        }
+        Insert: {
+          booked_appointment_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by: string
+          duration_minutes?: number
+          id?: string
+          is_urgent?: boolean
+          notes?: string | null
+          patient_id: string
+          preferred_period?: string
+          reason: string
+          status?: string
+        }
+        Update: {
+          booked_appointment_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          id?: string
+          is_urgent?: boolean
+          notes?: string | null
+          patient_id?: string
+          preferred_period?: string
+          reason?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_waitlist_booked_appointment_id_fkey"
+            columns: ["booked_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_waitlist_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -794,6 +907,38 @@ export type Database = {
           },
         ]
       }
+      payment_reminders: {
+        Row: {
+          handled_at: string
+          handled_by: string
+          id: string
+          outstanding_amount: number
+          patient_id: string
+        }
+        Insert: {
+          handled_at?: string
+          handled_by: string
+          id?: string
+          outstanding_amount: number
+          patient_id: string
+        }
+        Update: {
+          handled_at?: string
+          handled_by?: string
+          id?: string
+          outstanding_amount?: number
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1025,6 +1170,256 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_digest_notifications: {
+        Row: {
+          attempts: number
+          clinic_day: string
+          created_at: string
+          id: string
+          item_count: number
+          kind: string
+          last_error: string | null
+          locked_until: string | null
+          next_attempt_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          clinic_day: string
+          created_at?: string
+          id?: string
+          item_count: number
+          kind: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          clinic_day?: string
+          created_at?: string
+          id?: string
+          item_count?: number
+          kind?: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      stock_items: {
+        Row: {
+          alert_threshold: number
+          archived_at: string | null
+          archived_by: string | null
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          quantity: number
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          alert_threshold?: number
+          archived_at?: string | null
+          archived_by?: string | null
+          category: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          alert_threshold?: number
+          archived_at?: string | null
+          archived_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string
+          delta: number
+          id: string
+          item_id: string
+          kind: string
+          quantity_after: number
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          delta: number
+          id?: string
+          item_id: string
+          kind: string
+          quantity_after: number
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          delta?: number
+          id?: string
+          item_id?: string
+          kind?: string
+          quantity_after?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_plan_steps: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          completed_by: string | null
+          id: string
+          intervention_id: string | null
+          label: string
+          plan_id: string
+          planned_date: string | null
+          position: number
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          intervention_id?: string | null
+          label: string
+          plan_id: string
+          planned_date?: string | null
+          position: number
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          intervention_id?: string | null
+          label?: string
+          plan_id?: string
+          planned_date?: string | null
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plan_steps_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: true
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plan_steps_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_plans: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          idempotency_key: string
+          notes: string | null
+          patient_id: string
+          status: Database["public"]["Enums"]["treatment_plan_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          idempotency_key: string
+          notes?: string | null
+          patient_id: string
+          status?: Database["public"]["Enums"]["treatment_plan_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key?: string
+          notes?: string | null
+          patient_id?: string
+          status?: Database["public"]["Enums"]["treatment_plan_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_sessions: {
         Row: {
           auth_session_id: string
@@ -1066,7 +1461,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_treatment_plan: {
+        Args: { target_plan_id: string }
+        Returns: boolean
+      }
+      add_waitlist_entry: {
+        Args: {
+          target_duration_minutes: number
+          target_is_urgent: boolean
+          target_notes?: string
+          target_patient_id: string
+          target_preferred_period: string
+          target_reason: string
+        }
+        Returns: string
+      }
       archive_patient: { Args: { patient_id: string }; Returns: boolean }
+      archive_stock_item: { Args: { target_item_id: string }; Returns: boolean }
+      book_waitlist_entry: {
+        Args: {
+          target_entry_id: string
+          target_idempotency_key: string
+          target_starts_at: string
+        }
+        Returns: string
+      }
       cancel_appointment: {
         Args: {
           target_appointment_id: string
@@ -1078,6 +1497,52 @@ export type Database = {
       cancel_intervention: {
         Args: { target_intervention_id: string; target_patient_id: string }
         Returns: boolean
+      }
+      cancel_treatment_plan: {
+        Args: { target_plan_id: string; target_reason: string }
+        Returns: boolean
+      }
+      claim_due_telegram_appointment_reminders: {
+        Args: { reference_time?: string }
+        Returns: {
+          appointment_id: string
+          notification_id: string
+          patient_first_name: string
+          patient_id: string
+          starts_at: string
+        }[]
+      }
+      claim_staff_digests: {
+        Args: { reference_time?: string }
+        Returns: {
+          item_count: number
+          kind: string
+          notification_id: string
+        }[]
+      }
+      complete_staff_digest: {
+        Args: {
+          delivered: boolean
+          failure_message?: string
+          target_notification_id: string
+        }
+        Returns: boolean
+      }
+      complete_telegram_appointment_reminder: {
+        Args: {
+          delivered: boolean
+          failure_message?: string
+          target_notification_id: string
+        }
+        Returns: boolean
+      }
+      complete_treatment_step: {
+        Args: {
+          target_idempotency_key: string
+          target_performed_at: string
+          target_step_id: string
+        }
+        Returns: string
       }
       create_appointment: {
         Args: {
@@ -1172,6 +1637,29 @@ export type Database = {
             }
             Returns: string
           }
+      create_stock_item: {
+        Args: {
+          target_alert_threshold: number
+          target_category: string
+          target_name: string
+          target_notes?: string
+          target_quantity: number
+          target_supplier?: string
+          target_unit: string
+        }
+        Returns: string
+      }
+      create_treatment_plan: {
+        Args: {
+          target_category: string
+          target_idempotency_key: string
+          target_notes: string
+          target_patient_id: string
+          target_steps: Json
+          target_title: string
+        }
+        Returns: string
+      }
       disable_ip_policy: {
         Args: { target_policy_id: string }
         Returns: boolean
@@ -1213,12 +1701,34 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
+      get_monthly_statistics: {
+        Args: { target_month: string }
+        Returns: {
+          months: Json
+          natures: Json
+        }[]
+      }
       get_patient_financial_summary: {
         Args: { target_patient_id: string }
         Returns: {
           outstanding: number
           total_due: number
           total_received: number
+        }[]
+      }
+      get_payment_followup: {
+        Args: { reference_time?: string }
+        Returns: {
+          first_name: string
+          is_due: boolean
+          last_name: string
+          last_payment_at: string
+          last_reminder_at: string
+          outstanding: number
+          patient_id: string
+          phone: string
+          reminder_count: number
+          unpaid_since: string
         }[]
       }
       get_security_center: { Args: { reference_time?: string }; Returns: Json }
@@ -1228,6 +1738,10 @@ export type Database = {
           target_patient_id: string
           target_type: Database["public"]["Enums"]["appointment_reminder_type"]
         }
+        Returns: boolean
+      }
+      mark_payment_reminder_handled: {
+        Args: { target_patient_id: string }
         Returns: boolean
       }
       observe_current_session: { Args: never; Returns: undefined }
@@ -1244,6 +1758,19 @@ export type Database = {
           target_reference?: string
         }
         Returns: string
+      }
+      record_stock_movement: {
+        Args: {
+          target_item_id: string
+          target_kind: string
+          target_quantity: number
+          target_reason?: string
+        }
+        Returns: number
+      }
+      remove_waitlist_entry: {
+        Args: { target_entry_id: string }
+        Returns: boolean
       }
       resolve_dental_finding: {
         Args: { target_finding_id: string; target_patient_id: string }
@@ -1320,6 +1847,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_stock_item: {
+        Args: {
+          target_alert_threshold: number
+          target_category: string
+          target_item_id: string
+          target_name: string
+          target_notes?: string
+          target_supplier?: string
+          target_unit: string
+        }
+        Returns: boolean
+      }
       void_invoice: {
         Args: {
           target_invoice_id: string
@@ -1364,6 +1903,7 @@ export type Database = {
       payment_status: "received" | "reversed"
       prescription_status: "active" | "voided"
       security_event_severity: "info" | "warning" | "critical"
+      treatment_plan_status: "proposed" | "accepted" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1519,6 +2059,8 @@ export const Constants = {
       payment_status: ["received", "reversed"],
       prescription_status: ["active", "voided"],
       security_event_severity: ["info", "warning", "critical"],
+      treatment_plan_status: ["proposed", "accepted", "completed", "cancelled"],
     },
   },
 } as const
+

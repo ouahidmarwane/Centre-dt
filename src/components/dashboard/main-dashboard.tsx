@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Image from "next/image";
 import Link from "next/link";
 import { ClinicVideo } from "./clinic-video";
@@ -11,12 +12,14 @@ import type { AccountingDashboard } from "@/lib/accounting/data";
 import type { AuthenticatedUser } from "@/lib/auth/server";
 import type { DashboardAppointment, MainDashboard } from "@/lib/dashboard/data";
 import type { DashboardPeriodKey } from "@/lib/dashboard/period";
-import { formatDashboardMoney, frenchClinicDate } from "@/lib/dashboard/presentation";
+import { formatDashboardMoney, frenchClinicDate, hourlyQuote } from "@/lib/dashboard/presentation";
+import { clinicDateValue, clinicTimeValue } from "@/lib/appointments/validation";
+import { HourlyQuote } from "./hourly-quote";
 
 const plainNumber = new Intl.NumberFormat("fr-MA", { maximumFractionDigits: 0 });
 const compactNumber = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
-const appointmentTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Casablanca" });
-const appointmentDay = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Casablanca" });
+const appointmentTime = new ClinicDateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const appointmentDay = new ClinicDateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
 const periodLabels: Record<DashboardPeriodKey, string> = {
   week: "Semaine",
@@ -54,7 +57,7 @@ export function MainDashboardView({ user, operational, period, financial, sixMon
     { label: "Encaissements", value: plainNumber.format(financial.received), unit: "MAD", note: `Période · ${periodLabels[period].toLowerCase()}`, href: "/accounting", action: "Voir la comptabilité", texture: "money", toolbar: <PeriodChips period={period} />, detail: <ReceivedDetail dashboard={financial} /> },
     { label: "Rendez-vous aujourd’hui", value: String(appointments.total), note: scheduledNote, href: planningHref, action: "Ouvrir le planning", texture: "clock", detail: appointmentsDetail },
     { label: "Nouveaux patients", value: String(patients.createdThisMonth), note: "Depuis le 1er du mois", href: "/patients", action: "Voir les patients", texture: "people", detail: newPatientsDetail },
-    { label: "Encours global", value: plainNumber.format(financial.current_outstanding), unit: "MAD", note: "Reste à encaisser", href: "/accounting", action: "Suivre les impayés", texture: "money", detail: <OutstandingDetail dashboard={financial} /> },
+    { label: "Encours global", value: plainNumber.format(financial.current_outstanding), unit: "MAD", note: "Reste à encaisser", href: "/payments", action: "Suivre les impayés", texture: "money", detail: <OutstandingDetail dashboard={financial} /> },
   ] : [
     { label: "Rendez-vous aujourd’hui", value: String(appointments.total), note: scheduledNote, href: planningHref, action: "Ouvrir le planning", texture: "clock", detail: appointmentsDetail },
     { label: "Patients actifs", value: compactNumber.format(patients.active), note: "Dossiers ouverts", href: "/patients", action: "Voir les patients", texture: "people", detail: <DetailLine>dont {patients.createdThisMonth} créés ce mois</DetailLine> },
@@ -257,7 +260,7 @@ function WelcomeCard({ clinicDate, firstName }: { clinicDate: string; firstName:
         <p className="mt-5 text-xs font-semibold text-white/72">Bienvenue,</p>
         <h1 className="mt-1 text-4xl leading-tight font-extrabold tracking-[-0.03em] text-white sm:text-5xl">Bonjour, {firstName}.</h1>
         <p className="mt-3 text-sm font-semibold text-sky-100">{frenchClinicDate(clinicDate)}</p>
-        <p className="mt-2 text-sm leading-6 text-white/76">L’excellence au service de votre sourire.</p>
+        <HourlyQuote className="mt-5 max-w-md border-l-2 border-[var(--gold-light)] pl-4 text-xl leading-snug font-semibold tracking-[-0.01em] text-white drop-shadow-[0_2px_8px_rgba(3,22,42,0.55)] sm:text-2xl" initial={hourlyQuote(clinicDateValue(new Date()), Number(clinicTimeValue(new Date()).slice(0, 2)))} />
         <Link className="mt-auto inline-flex min-h-11 w-fit items-center gap-2 text-xs font-bold text-white transition-transform hover:translate-x-1" href={`/appointments?date=${clinicDate}`}>Ouvrir le planning <span aria-hidden="true" className="text-[var(--gold-light)]">→</span></Link>
       </div>
     </Card>

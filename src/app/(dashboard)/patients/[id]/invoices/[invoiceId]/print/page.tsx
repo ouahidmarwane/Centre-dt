@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -11,7 +12,7 @@ import { isPatientId } from "@/lib/patients/validation";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Africa/Casablanca" });
+const date = new ClinicDateTimeFormat("fr-FR", { dateStyle: "long" });
 const money = new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD", minimumFractionDigits: 2 });
 
 export default async function InvoicePrintPage({ params }: { params: Promise<{ id: string; invoiceId: string }> }) {

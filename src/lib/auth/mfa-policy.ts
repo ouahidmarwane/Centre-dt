@@ -45,12 +45,7 @@ export function decideMfaRoute(identity: RoutingIdentity, target: MfaRouteTarget
     return { action: "redirect", destination: "/forbidden" };
   }
 
-  if (identity.role === "assistant") {
-    return target === "application"
-      ? { action: "allow" }
-      : { action: "redirect", destination: "/dashboard" };
-  }
-
+  // Every clinic role (doctor and assistant) needs exactly one verified TOTP factor and AAL2.
   if (!Number.isSafeInteger(identity.verifiedTotpCount) || identity.verifiedTotpCount < 0) {
     return { action: "redirect", destination: "/forbidden" };
   }

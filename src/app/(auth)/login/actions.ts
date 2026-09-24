@@ -1,6 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
+import { ACTIVITY_COOKIE, activityCookieOptions, encodeActivity } from "@/lib/auth/session-activity";
 
 import { getLoginDestination } from "@/lib/auth/server";
 import { validateLoginFields } from "@/lib/auth/validation";
@@ -36,6 +39,8 @@ export async function loginAction(
     }
 
     await supabase.rpc("observe_current_session");
+    // Starts the inactivity window checked by the proxy on every request.
+    (await cookies()).set(ACTIVITY_COOKIE, encodeActivity(new Date()), activityCookieOptions(process.env.NODE_ENV === "production"));
     destination = await getLoginDestination();
     if (!destination || destination === "/login") {
       await supabase.auth.signOut({ scope: "local" });

@@ -1,11 +1,13 @@
 "use client";
+
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Link from "next/link";import {useActionState,useState} from "react";
 import type {PrescriptionActionState} from "@/app/(dashboard)/patients/[id]/prescription-actions";import type {PrescriptionSummary} from "@/lib/prescriptions/data";import type {AppRole} from "@/lib/permissions";
 import {FormField} from "@/components/ui/form-field";
 import {submitKeepingValues} from "@/components/ui/submit-keeping-values";
 import {Badge,Composer,DangerDisclosure,dangerLink,EmptyNote,fieldClass,ghostButton,PanelHeading,panelClass,primaryButton,ReadOnlyNote} from "@/components/ui/panel-ui";
 type Props={patientId:string;patientActive:boolean;role:AppRole;prescriptionToken:string;prescriptions:PrescriptionSummary[];createAction:(s:PrescriptionActionState,f:FormData)=>Promise<PrescriptionActionState>;voidAction:(id:string,s:PrescriptionActionState,f:FormData)=>Promise<PrescriptionActionState>};
-const initial:PrescriptionActionState={success:false,message:null,fieldErrors:{}};const date=new Intl.DateTimeFormat("fr-FR",{dateStyle:"long",timeZone:"Africa/Casablanca"});
+const initial:PrescriptionActionState={success:false,message:null,fieldErrors:{}};const date=new ClinicDateTimeFormat("fr-FR",{dateStyle:"long"});
 
 export function PatientPrescriptions(props:Props){
   return <section aria-labelledby="prescriptions-title" className={`${panelClass} mt-5 p-5 sm:p-7`}>

@@ -49,7 +49,7 @@ test("WhatsApp messages carry an Arabic version after the French one",()=>{
   ]){
     const [french,arabic]=decodeURIComponent(url!.split("?text=")[1]).split("\n\n");
     assert.match(french,/^Bonjour Sara/);
-    assert.match(arabic,/^مرحبا Sara/); assert.match(arabic,/مركز وحيد لطب الأسنان/); assert.match(arabic,/09:00/);
+    assert.match(arabic,/^مرحبا Sara/); assert.match(arabic,/مركز وحيد لطب الأسنان/); assert.match(arabic,/08:00/); // UTC+0 since 2026-09-20
   }
 });
 

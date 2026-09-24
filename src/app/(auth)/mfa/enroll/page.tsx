@@ -11,5 +11,5 @@ export const metadata: Metadata = { title: "Configurer la double authentificatio
 
 export default async function MfaEnrollPage() {
   await requireMfaPage("enroll");
-  return <MfaFrame title="Configurer votre authentificateur" description="Cette étape est obligatoire pour protéger l’accès médecin aux données du cabinet."><EnrollmentForm /></MfaFrame>;
+  return <MfaFrame title="Configurer votre authentificateur" description="Cette étape est obligatoire pour protéger votre accès aux données des patients du cabinet."><EnrollmentForm /></MfaFrame>;
 }

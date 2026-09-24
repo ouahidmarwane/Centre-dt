@@ -37,6 +37,9 @@ export function RouteTitle() {
   const pathname = usePathname();
   const title = pathname.startsWith("/patients") ? "Patients"
     : pathname.startsWith("/appointments") ? "Rendez-vous"
+      : pathname.startsWith("/payments") ? "Recouvrement"
+        : pathname.startsWith("/stock") ? "Stock"
+          : pathname.startsWith("/statistics") ? "Statistiques"
       : pathname.startsWith("/accounting") ? "Comptabilité"
         : pathname.startsWith("/security") ? "Supervision"
           : "Dashboard";

@@ -15,11 +15,15 @@ export const permissions = [
   "payments.read",
   "payments.record",
   "payments.reverse",
+  "payments.reminders",
   "appointments.read",
   "appointments.write",
   "appointments.cancel",
   "appointments.status",
   "appointments.reminders",
+  "treatment_plans.read",
+  "treatment_plans.write",
+  "treatment_plans.progress",
   "prescriptions.read",
   "prescriptions.create",
   "prescriptions.void",
@@ -35,6 +39,10 @@ export const permissions = [
   "billing.write",
   "accounting.read",
   "accounting.write",
+  "statistics.read",
+  "stock.read",
+  "stock.write",
+  "stock.archive",
   "security.read",
   "security.manage",
 ] as const;
@@ -44,6 +52,7 @@ export type Permission = (typeof permissions)[number];
 export const doctorOnlyRoutePermissions = {
   "/accounting": "accounting.read",
   "/security": "security.read",
+  "/statistics": "statistics.read",
 } as const satisfies Record<string, Permission>;
 
 const rolePermissions: Record<AppRole, ReadonlySet<Permission>> = {
@@ -57,11 +66,14 @@ const rolePermissions: Record<AppRole, ReadonlySet<Permission>> = {
     "interventions.write",
     "payments.read",
     "payments.record",
+    "payments.reminders",
     "appointments.read",
     "appointments.write",
     "appointments.cancel",
     "appointments.status",
     "appointments.reminders",
+    "treatment_plans.read",
+    "treatment_plans.progress",
     "prescriptions.read",
     "prescriptions.print",
     "invoices.read",
@@ -71,6 +83,8 @@ const rolePermissions: Record<AppRole, ReadonlySet<Permission>> = {
     "receipts.print",
     "billing.read",
     "billing.write",
+    "stock.read",
+    "stock.write",
   ]),
 };
 

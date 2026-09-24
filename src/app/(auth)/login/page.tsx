@@ -4,12 +4,15 @@ import { redirect } from "next/navigation";
 
 import { getLoginDestination } from "@/lib/auth/server";
 
+import { IDLE_REASON } from "@/lib/auth/session-activity";
+
 import { LoginForm } from "./login-form";
 import styles from "./login.module.css";
 
 export const metadata: Metadata = { title: "Connexion" };
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ raison?: string }> }) {
+  const { raison } = await searchParams;
   const destination = await getLoginDestination();
   if (destination) redirect(destination);
 
@@ -72,6 +75,11 @@ export default async function LoginPage() {
           <p className="mt-3 leading-6 text-[var(--muted)]">
             Utilisez les identifiants fournis par l’administration du cabinet.
           </p>
+          {raison === IDLE_REASON ? (
+            <p className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900" role="status">
+              Votre session a été fermée après 30 minutes d’inactivité. Reconnectez-vous pour continuer.
+            </p>
+          ) : null}
           <LoginForm />
           <p className="mt-7 text-sm leading-6 text-[var(--muted)]">
             Aucun compte public ne peut être créé depuis cette application.

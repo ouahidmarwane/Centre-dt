@@ -57,17 +57,15 @@ async function getAuthSnapshot(): Promise<AuthSnapshot> {
     return { identity: { status: "denied" }, subject: claims.sub, email };
   }
 
-  let verifiedTotpCount = 0;
-  if (bootstrap.role === "doctor") {
-    try {
-      const count = verifiedTotpCountFromResult(await supabase.auth.mfa.listFactors());
-      if (count === null) {
-        return { identity: { status: "denied" }, subject: claims.sub, email };
-      }
-      verifiedTotpCount = count;
-    } catch {
+  let verifiedTotpCount: number;
+  try {
+    const count = verifiedTotpCountFromResult(await supabase.auth.mfa.listFactors());
+    if (count === null) {
       return { identity: { status: "denied" }, subject: claims.sub, email };
     }
+    verifiedTotpCount = count;
+  } catch {
+    return { identity: { status: "denied" }, subject: claims.sub, email };
   }
 
   return {
@@ -92,7 +90,7 @@ export async function getLoginDestination(): Promise<string | null> {
 export async function requireMfaPage(target: "enroll" | "challenge") {
   const snapshot = await getAuthSnapshot();
   const decision = enforceRoute(snapshot.identity, target);
-  if (snapshot.identity.status !== "active" || snapshot.identity.role !== "doctor" || snapshot.identity.aal !== "aal1") {
+  if (snapshot.identity.status !== "active" || snapshot.identity.aal !== "aal1") {
     redirect("/forbidden");
   }
   return {
@@ -101,11 +99,8 @@ export async function requireMfaPage(target: "enroll" | "challenge") {
   };
 }
 
-export async function requireUser(): Promise<AuthenticatedUser> {
-  const snapshot = await getAuthSnapshot();
-  enforceRoute(snapshot.identity, "application");
-  if (snapshot.identity.status !== "active" || !snapshot.subject) redirect("/forbidden");
-
+async function loadActiveUser(snapshot: AuthSnapshot): Promise<AuthenticatedUser | null> {
+  if (snapshot.identity.status !== "active" || !snapshot.subject) return null;
   const supabase = await createClient();
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -115,7 +110,7 @@ export async function requireUser(): Promise<AuthenticatedUser> {
 
   if (profileError || !isProfileRecord(profile) || !profile.is_active ||
       profile.role !== snapshot.identity.role) {
-    redirect("/forbidden");
+    return null;
   }
 
   return {
@@ -125,6 +120,21 @@ export async function requireUser(): Promise<AuthenticatedUser> {
     role: snapshot.identity.role,
     aal: snapshot.identity.aal,
   };
+}
+
+export async function requireUser(): Promise<AuthenticatedUser> {
+  const snapshot = await getAuthSnapshot();
+  enforceRoute(snapshot.identity, "application");
+  const user = await loadActiveUser(snapshot);
+  if (!user) redirect("/forbidden");
+  return user;
+}
+
+// Same checks as requireUser without redirects, for route handlers answering JSON.
+export async function getAuthorizedUser(): Promise<AuthenticatedUser | null> {
+  const snapshot = await getAuthSnapshot();
+  if (decideMfaRoute(snapshot.identity, "application").action !== "allow") return null;
+  return loadActiveUser(snapshot);
 }
 
 export async function requirePermission(permission: Permission): Promise<AuthenticatedUser> {

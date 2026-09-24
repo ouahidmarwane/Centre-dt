@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
@@ -30,7 +31,7 @@ type Props = {
 
 const initial: FinancialDocumentActionState = { success: false, message: null, fieldErrors: {} };
 const money = new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD", minimumFractionDigits: 2 });
-const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Africa/Casablanca" });
+const date = new ClinicDateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export function FinancialDocuments(props: Props) {
   const claimed = new Set(props.activeInvoicedInterventionIds);

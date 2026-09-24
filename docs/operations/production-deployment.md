@@ -124,7 +124,9 @@ pour ce smoke test ; protéger/détruire les sorties synthétiques hors Git.
 ## Phase G — MFA
 
 Docteur : password → challenge, AAL1 sans accès clinique ; TOTP valide → AAL2,
-dashboard/comptabilité/sécurité accessibles. Code invalide refusé, retour arrière
+dashboard/comptabilité/sécurité accessibles.
+Depuis le 24 septembre 2026, même règle pour l'assistante : password → enrôlement
+(première fois) ou challenge, AAL1 sans aucun accès clinique, AAL2 requis. Code invalide refusé, retour arrière
 et routes directes protégés. Zéro ou plusieurs facteurs vérifiés : fail-closed.
 Ne pas provoquer ces anomalies sur le vrai compte ; couvrir par tests isolés.
 Ni secret, QR, URI, code ni facteur dans les captures/logs.

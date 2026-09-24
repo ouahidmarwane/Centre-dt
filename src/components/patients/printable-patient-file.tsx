@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import { useEffect, useRef, useState } from "react";
 import type { Patient } from "@/lib/patients/data";
 import type { InterventionView, Payment, FinancialSummary } from "@/lib/finance/data";
@@ -9,7 +10,7 @@ import { conditionLabels, statusLabels } from "@/lib/odontogram/validation";
 type Props = { patient: Patient; age: number | null; interventions: InterventionView[]; payments: Payment[]; summary: FinancialSummary; findings: DentalFinding[] };
 const escape = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const money = (value: number) => new Intl.NumberFormat("fr-MA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
-const date = (value: string) => new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca" }).format(new Date(value.length === 10 ? `${value}T12:00:00Z` : value));
+const date = (value: string) => new ClinicDateTimeFormat("fr-FR").format(new Date(value.length === 10 ? `${value}T12:00:00Z` : value));
 
 function dentalDiagram(markedTeeth: Set<number>) {
   const arch = (upper: boolean, child: boolean) => {

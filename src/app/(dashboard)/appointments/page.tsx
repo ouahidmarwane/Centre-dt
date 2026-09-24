@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { DateJump } from "@/components/appointments/date-jump";
 import { Schedule } from "@/components/appointments/schedule";
+import { WaitlistPanel } from "@/components/appointments/waitlist-panel";
 import { requirePermission } from "@/lib/auth/server";
 import { getSchedule } from "@/lib/appointments/data";
+import { getWaitlistOverview } from "@/lib/waitlist/data";
+import { bookingTokenKey } from "@/lib/waitlist/validation";
 import { clinicDateValue, isUuid, shiftCalendarDate, validateScheduleDate } from "@/lib/appointments/validation";
 import { cancelAppointmentAction, createAppointmentAction, markReminderHandledAction, setAppointmentStatusAction, updateAppointmentAction } from "./actions";
+import { addWaitlistEntryAction, bookWaitlistEntryAction, removeWaitlistEntryAction } from "./waitlist-actions";
 
 export const dynamic="force-dynamic";
 
@@ -21,13 +25,15 @@ function relativeLabel(date:string,today:string){
 }
 
 export default async function AppointmentsPage({searchParams}:{searchParams:Promise<{date?:string;patient?:string}>}) {
-  await requirePermission("appointments.read");const query=await searchParams;const date=validateScheduleDate(query.date);const data=await getSchedule(date);const defaultPatientId=isUuid(query.patient)&&data.patients.some(patient=>patient.id===query.patient)?query.patient:undefined;
+  await requirePermission("appointments.read");const query=await searchParams;const date=validateScheduleDate(query.date);// The waitlist is an add-on: if it cannot load, the schedule must still work.
+  const [data,waitlist]=await Promise.all([getSchedule(date),getWaitlistOverview().catch(()=>null)]);const defaultPatientId=isUuid(query.patient)&&data.patients.some(patient=>patient.id===query.patient)?query.patient:undefined;
   const now=new Date();
   const today=clinicDateValue(now);
   const relative=relativeLabel(date,today);
   // Monday-first week containing the selected day.
   const mondayOffset=(asDate(date).getUTCDay()+6)%7;
   const week=Array.from({length:7},(_,index)=>shiftCalendarDate(date,index-mondayOffset));
+  const bookingTokens=Object.fromEntries((waitlist?.freedSlots??[]).flatMap(slot=>slot.candidates.map(candidate=>[bookingTokenKey(slot.startsAt,candidate.id),crypto.randomUUID()])));
   const withPatient=(target:string)=>`/appointments?date=${target}${defaultPatientId?`&patient=${defaultPatientId}`:""}`;
 
   return (
@@ -64,6 +70,8 @@ export default async function AppointmentsPage({searchParams}:{searchParams:Prom
       </nav>
 
       <Schedule key={date} {...data} cancelAction={cancelAppointmentAction} createAction={createAppointmentAction} defaultPatientId={defaultPatientId} isToday={date===today} now={now.toISOString()} reminderAction={markReminderHandledAction} selectedDate={date} statusAction={setAppointmentStatusAction} token={crypto.randomUUID()} updateAction={updateAppointmentAction}/>
+
+      {waitlist?<WaitlistPanel addAction={addWaitlistEntryAction} bookAction={bookWaitlistEntryAction} bookingTokens={bookingTokens} entries={waitlist.entries} formToken={crypto.randomUUID()} freedSlots={waitlist.freedSlots} patients={data.patients} removeAction={removeWaitlistEntryAction}/>:<p className="mt-5 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">La liste d’attente est momentanément indisponible. Le planning reste utilisable.</p>}
     </div>
   );
 }

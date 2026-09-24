@@ -84,7 +84,7 @@ export async function verifyEnrollmentAction(
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
   if (error || !(await confirmedAal2())) return { error: genericMfaError };
-  redirect("/dashboard");
+  redirect("/dashboard?bienvenue=1");
 }
 
 export async function verifyChallengeAction(
@@ -102,5 +102,5 @@ export async function verifyChallengeAction(
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factors.totp[0].id, code });
   if (error || !(await confirmedAal2())) return { error: genericMfaError };
-  redirect("/dashboard");
+  redirect("/dashboard?bienvenue=1");
 }

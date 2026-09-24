@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "../clinic-time.ts";
 export const patientLimits = {
   name: 120,
   phone: 32,
@@ -61,10 +62,9 @@ function checkbox(value: FormDataEntryValue | null) {
 }
 
 function clinicDate(now: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const parts = new ClinicDateTimeFormat("en-CA", {
     day: "2-digit",
     month: "2-digit",
-    timeZone: "Africa/Casablanca",
     year: "numeric",
   }).formatToParts(now);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));

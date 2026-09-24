@@ -1,4 +1,4 @@
-export type AppIconName = "dashboard" | "patients" | "calendar" | "accounting" | "security" | "plus" | "search";
+export type AppIconName = "dashboard" | "patients" | "calendar" | "accounting" | "security" | "plus" | "search" | "receipt" | "box" | "chart" | "bell";
 
 export function AppIcon({ name, className = "size-5" }: { name: AppIconName; className?: string }) {
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 1.8 };
@@ -11,6 +11,10 @@ export function AppIcon({ name, className = "size-5" }: { name: AppIconName; cla
       {name === "security" ? <><path d="M12 22s8-3.8 8-10V5l-8-3-8 3v7c0 6.2 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></> : null}
       {name === "plus" ? <path d="M12 5v14M5 12h14" /> : null}
       {name === "search" ? <><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></> : null}
+      {name === "receipt" ? <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></> : null}
+      {name === "box" ? <><path d="m21 8-9-5-9 5 9 5z" /><path d="M3 8v8l9 5 9-5V8M12 13v8" /></> : null}
+      {name === "bell" ? <><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9" /><path d="M10 19a2 2 0 0 0 4 0" /></> : null}
+      {name === "chart" ? <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> : null}
     </svg>
   );
 }

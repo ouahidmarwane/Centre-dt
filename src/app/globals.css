@@ -251,3 +251,29 @@ a {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Entry after the MFA welcome video: the dashboard waits behind the video, then
+   fades in with a slight approach while the video dissolves (LoginWelcome). */
+html[data-welcome="hold"] .vision-canvas > div {
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+html[data-welcome="reveal"] .vision-canvas > div {
+  opacity: 1;
+  transform: none;
+  transition: opacity 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) 250ms, transform 1400ms cubic-bezier(0.2, 0.7, 0.2, 1) 250ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-welcome] .vision-canvas > div {
+    transform: none;
+    transition: opacity 300ms linear;
+  }
+}
+
+/* Hourly motivational quote on the dashboard (HourlyQuote). */
+@keyframes quote-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
