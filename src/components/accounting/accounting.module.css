@@ -1,0 +1,43 @@
+/* Bars grow from their baseline; delays per column because the CSP blocks inline styles. */
+.growY { transform-box: fill-box; transform-origin: 50% 100%; animation: growY 720ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.growX { transform-box: fill-box; transform-origin: 0% 50%; animation: growX 820ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes growY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.fade { animation: fade 500ms ease both; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.columns > g:nth-child(2) .growY { animation-delay: 28ms; }
+.columns > g:nth-child(3) .growY { animation-delay: 56ms; }
+.columns > g:nth-child(4) .growY { animation-delay: 84ms; }
+.columns > g:nth-child(5) .growY { animation-delay: 112ms; }
+.columns > g:nth-child(6) .growY { animation-delay: 140ms; }
+.columns > g:nth-child(7) .growY { animation-delay: 168ms; }
+.columns > g:nth-child(8) .growY { animation-delay: 196ms; }
+.columns > g:nth-child(9) .growY { animation-delay: 224ms; }
+.columns > g:nth-child(10) .growY { animation-delay: 252ms; }
+.columns > g:nth-child(11) .growY { animation-delay: 280ms; }
+.columns > g:nth-child(12) .growY { animation-delay: 308ms; }
+.columns > g:nth-child(13) .growY { animation-delay: 336ms; }
+.columns > g:nth-child(14) .growY { animation-delay: 364ms; }
+.columns > g:nth-child(15) .growY { animation-delay: 392ms; }
+.columns > g:nth-child(16) .growY { animation-delay: 420ms; }
+.columns > g:nth-child(17) .growY { animation-delay: 448ms; }
+.columns > g:nth-child(18) .growY { animation-delay: 476ms; }
+.columns > g:nth-child(19) .growY { animation-delay: 504ms; }
+.columns > g:nth-child(20) .growY { animation-delay: 532ms; }
+.columns > g:nth-child(21) .growY { animation-delay: 560ms; }
+.columns > g:nth-child(22) .growY { animation-delay: 588ms; }
+.columns > g:nth-child(23) .growY { animation-delay: 616ms; }
+.columns > g:nth-child(24) .growY { animation-delay: 644ms; }
+.columns > g:nth-child(25) .growY { animation-delay: 672ms; }
+.columns > g:nth-child(26) .growY { animation-delay: 700ms; }
+.columns > g:nth-child(27) .growY { animation-delay: 728ms; }
+.columns > g:nth-child(28) .growY { animation-delay: 756ms; }
+.columns > g:nth-child(29) .growY { animation-delay: 784ms; }
+.columns > g:nth-child(30) .growY { animation-delay: 812ms; }
+.columns > g:nth-child(31) .growY { animation-delay: 840ms; }
+.methods > li:nth-child(2) .growX { animation-delay: 90ms; }
+.methods > li:nth-child(3) .growX { animation-delay: 180ms; }
+.methods > li:nth-child(4) .growX { animation-delay: 270ms; }
+.methods > li:nth-child(5) .growX { animation-delay: 360ms; }
+.methods > li:nth-child(6) .growX { animation-delay: 450ms; }
+@media (prefers-reduced-motion: reduce) { .growY, .growX, .fade { animation: none; } }

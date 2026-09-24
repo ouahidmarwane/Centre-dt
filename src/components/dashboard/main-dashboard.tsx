@@ -1,13 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ClinicVideo } from "./clinic-video";
+import { CashflowAreaChart } from "./cashflow-area-chart";
+import { DistributionChart } from "./distribution-chart";
+import { InteractiveCard } from "./interactive-card";
+import { SpotlightSurface, type SpotlightTexture } from "./spotlight-surface";
 
-import { AppIcon, type AppIconName } from "@/components/app-icon";
+import { AppIcon } from "@/components/app-icon";
 import type { AccountingDashboard } from "@/lib/accounting/data";
 import type { AuthenticatedUser } from "@/lib/auth/server";
 import type { DashboardAppointment, MainDashboard } from "@/lib/dashboard/data";
 import type { DashboardPeriodKey } from "@/lib/dashboard/period";
 import { formatDashboardMoney, frenchClinicDate } from "@/lib/dashboard/presentation";
 
+const plainNumber = new Intl.NumberFormat("fr-MA", { maximumFractionDigits: 0 });
 const compactNumber = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
 const appointmentTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Casablanca" });
 const appointmentDay = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Casablanca" });
@@ -39,26 +45,29 @@ export function MainDashboardView({ user, operational, period, financial, sixMon
   const rawFirstName = user.fullName.trim().split(/\s+/)[0] || user.fullName;
   const firstName = /^membre$/i.test(rawFirstName) ? (user.role === "doctor" ? "Docteur" : "à vous") : rawFirstName;
 
+  const planningHref = `/appointments?date=${operational.clinicDate}`;
+  const scheduledNote = operational.appointments.scheduled === 1 ? "1 encore à venir" : `${operational.appointments.scheduled} encore à venir`;
+  const { appointments, patients } = operational;
+  const appointmentsDetail = <AppointmentsDetail dashboard={operational} />;
+  const newPatientsDetail = <ShareDetail part={patients.createdThisMonth} whole={patients.active} caption={`des ${plainNumber.format(patients.active)} dossiers actifs`} />;
   const metrics: KpiProps[] = financial ? [
-    { label: "Encaissements", value: formatDashboardMoney(financial.received), note: periodLabels[period], icon: "accounting" },
-    { label: "Rendez-vous aujourd’hui", value: String(operational.appointments.total), note: `${operational.appointments.scheduled} à venir`, icon: "calendar" },
-    { label: "Nouveaux patients", value: String(operational.patients.createdThisMonth), note: "Ce mois", icon: "patients" },
-    { label: "Encours global", value: formatDashboardMoney(financial.current_outstanding), note: "Calculé en base", icon: "security" },
+    { label: "Encaissements", value: plainNumber.format(financial.received), unit: "MAD", note: `Période · ${periodLabels[period].toLowerCase()}`, href: "/accounting", action: "Voir la comptabilité", texture: "money", toolbar: <PeriodChips period={period} />, detail: <ReceivedDetail dashboard={financial} /> },
+    { label: "Rendez-vous aujourd’hui", value: String(appointments.total), note: scheduledNote, href: planningHref, action: "Ouvrir le planning", texture: "clock", detail: appointmentsDetail },
+    { label: "Nouveaux patients", value: String(patients.createdThisMonth), note: "Depuis le 1er du mois", href: "/patients", action: "Voir les patients", texture: "people", detail: newPatientsDetail },
+    { label: "Encours global", value: plainNumber.format(financial.current_outstanding), unit: "MAD", note: "Reste à encaisser", href: "/accounting", action: "Suivre les impayés", texture: "money", detail: <OutstandingDetail dashboard={financial} /> },
   ] : [
-    { label: "Rendez-vous aujourd’hui", value: String(operational.appointments.total), note: `${operational.appointments.scheduled} à venir`, icon: "calendar" },
-    { label: "Patients actifs", value: compactNumber.format(operational.patients.active), note: "Dossiers actifs", icon: "patients" },
-    { label: "Nouveaux patients", value: String(operational.patients.createdThisMonth), note: "Ce mois", icon: "plus" },
-    { label: "Rappels manuels", value: String(operational.reminderCount), note: "À traiter", icon: "security" },
+    { label: "Rendez-vous aujourd’hui", value: String(appointments.total), note: scheduledNote, href: planningHref, action: "Ouvrir le planning", texture: "clock", detail: appointmentsDetail },
+    { label: "Patients actifs", value: compactNumber.format(patients.active), note: "Dossiers ouverts", href: "/patients", action: "Voir les patients", texture: "people", detail: <DetailLine>dont {patients.createdThisMonth} créés ce mois</DetailLine> },
+    { label: "Nouveaux patients", value: String(patients.createdThisMonth), note: "Depuis le 1er du mois", href: "/patients", action: "Voir les patients", texture: "people", detail: newPatientsDetail },
+    { label: "Rappels manuels", value: String(operational.reminderCount), note: "À traiter", href: planningHref, action: "Traiter les rappels", texture: "clock", detail: <DetailLine>{operational.reminderCount ? "Patients à rappeler par téléphone" : "Aucun rappel en attente"}</DetailLine> },
   ];
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-5">
-      <section aria-label="Indicateurs essentiels" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => <KpiCard key={metric.label} {...metric} />)}
-      </section>
+      <WelcomeCard clinicDate={operational.clinicDate} firstName={firstName} />
+      <KpiStrip metrics={metrics} />
 
       <section aria-label="Vue du cabinet" className="grid gap-5 xl:grid-cols-12">
-        <WelcomeCard clinicDate={operational.clinicDate} firstName={firstName} />
         <AppointmentGauge dashboard={operational} />
         <CabinetBalance dashboard={operational} />
       </section>
@@ -80,8 +89,8 @@ export function MainDashboardView({ user, operational, period, financial, sixMon
   );
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <article className={`vision-card ${className}`}>{children}</article>;
+function Card({ children, className = "", title, details, texture }: { children: React.ReactNode; className?: string; title?: string; details?: React.ReactNode; texture?: SpotlightTexture }) {
+  return <InteractiveCard className={className} title={title} details={details} texture={texture}>{children}</InteractiveCard>;
 }
 
 function CardHeading({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
@@ -96,51 +105,157 @@ function CardHeading({ title, subtitle, action }: { title: string; subtitle?: st
   );
 }
 
-type KpiProps = { label: string; value: string; note: string; icon: AppIconName };
+type KpiProps = { label: string; value: string; unit?: string; note: string; href: string; action: string; texture: SpotlightTexture; detail?: React.ReactNode; toolbar?: React.ReactNode };
 
-function KpiCard({ label, value, note, icon }: KpiProps) {
+// One ledger-style surface split by hairlines instead of four floating tiles.
+// The lead figure gets extra width so the row reads left to right, not as a uniform grid.
+function KpiStrip({ metrics }: { metrics: KpiProps[] }) {
   return (
-    <Card className="flex min-h-20 items-center justify-between gap-4 !p-4 sm:!px-5">
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-semibold text-slate-500">{label}</p>
-        <div className="mt-1 flex min-w-0 items-baseline gap-2">
-          <strong className="metric-number truncate text-xl font-extrabold tracking-[-0.035em] text-[var(--navy)]">{value}</strong>
-          <span className="hidden shrink-0 text-[10px] font-bold text-[var(--aqua)] 2xl:inline">{note}</span>
-        </div>
-      </div>
-      <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-[linear-gradient(145deg,#3b9dff,#1671ee)] text-white shadow-[0_8px_18px_rgba(23,113,238,0.22)]">
-        <AppIcon className="size-[21px]" name={icon} />
+    <section aria-label="Indicateurs essentiels" className="overflow-hidden rounded-[18px] border border-[#dbe6f1] bg-white/85 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_10px_30px_-18px_rgba(16,44,76,0.35)]">
+      <ul className="grid divide-y divide-[#e6edf5] sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+        {metrics.map((metric, index) => (
+          <li className={`kpi-rise min-w-0 border-[#e6edf5] ${index % 2 ? "sm:border-l" : ""} ${index > 1 ? "sm:border-t xl:border-t-0" : ""} ${index === 2 ? "xl:border-l" : ""}`} key={metric.label}>
+            <KpiCell lead={index === 0} {...metric} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// The whole cell is clickable through a stretched link on the label. The overlay needs
+// z-[1] so hover/press transforms below it can't steal the click; the period buttons
+// sit above it (z-10) so they stay independently selectable.
+function KpiCell({ label, value, unit, note, href, action, texture, lead, detail, toolbar }: KpiProps & { lead: boolean }) {
+  return (
+    <SpotlightSurface className="group relative flex h-full cursor-pointer flex-col px-5 pt-4 pb-5 transition-colors duration-200 active:bg-[#edf3fa] has-[a:focus-visible]:shadow-[inset_0_0_0_2px_var(--blue)] sm:px-6" texture={texture}>
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px] origin-left scale-x-0 bg-[var(--blue)] transition-transform duration-300 ease-out group-hover:scale-x-100 group-has-[a:focus-visible]:scale-x-100" />
+      <Link aria-label={`${label} : ${value}${unit ? ` ${unit}` : ""}. ${action}`} className="truncate text-[13px] font-medium text-slate-600 outline-none after:absolute after:inset-0 after:z-[1] after:content-['']" href={href}>{label}</Link>
+      <span className="mt-3 flex items-baseline gap-1.5 transition-transform duration-300 ease-out group-hover:translate-x-0.5">
+        <strong className={`metric-number leading-none font-semibold tracking-[-0.03em] text-[var(--navy)] transition-colors duration-200 group-hover:text-[var(--blue-deep)] ${lead ? "text-[34px]" : "text-[30px]"}`}>{value}</strong>
+        {unit ? <span className="text-xs font-medium text-slate-400">{unit}</span> : null}
       </span>
-    </Card>
+      <span className="mt-2.5 text-xs text-slate-500">{note}</span>
+      {toolbar ? <div className="relative z-10 mt-3">{toolbar}</div> : null}
+      <span className="mt-auto block pt-4">
+        {detail ? <span className="block border-t border-dashed border-[#e1e9f2] pt-3">{detail}</span> : null}
+        <span aria-hidden="true" className="mt-4 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[#d6e3f0] bg-white px-3 text-[11px] font-semibold text-[var(--blue-deep)] shadow-[0_1px_2px_rgba(16,44,76,0.06)] transition-all duration-200 group-hover:border-[var(--blue)] group-hover:bg-[var(--blue)] group-hover:text-white group-hover:shadow-[0_6px_14px_-6px_rgba(22,119,242,0.6)] group-active:scale-[0.97]">
+          {action}
+          <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+        </span>
+      </span>
+    </SpotlightSurface>
+  );
+}
+
+function PeriodChips({ period }: { period: DashboardPeriodKey }) {
+  return (
+    <nav aria-label="Changer la période des encaissements" className="inline-flex flex-wrap gap-1 rounded-[10px] bg-[#eef3f8] p-0.5">
+      {(Object.keys(periodLabels) as DashboardPeriodKey[]).map((key) => (
+        <Link aria-current={period === key ? "page" : undefined} className={`rounded-[8px] px-2.5 py-1 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${period === key ? "bg-white text-[var(--navy)] shadow-[0_1px_3px_rgba(16,44,76,0.14)]" : "text-slate-500 hover:bg-white/70 hover:text-[var(--navy)]"}`} href={`/dashboard?period=${key}`} key={key} scroll={false}>{periodLabels[key]}</Link>
+      ))}
+    </nav>
+  );
+}
+
+const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 0 });
+const ratio = (part: number, whole: number) => (whole > 0 ? Math.min(1, Math.max(0, part / whole)) : 0);
+
+function DetailLine({ children }: { children: React.ReactNode }) {
+  return <span className="block truncate text-[11px] text-slate-500">{children}</span>;
+}
+
+// Bars are drawn in SVG because the CSP blocks inline style attributes.
+function Meter({ value, tone = "#1677f2" }: { value: number; tone?: string }) {
+  return (
+    <svg aria-hidden="true" className="block h-1 w-full overflow-hidden rounded-full" preserveAspectRatio="none" viewBox="0 0 100 4">
+      <rect fill="#edf2f7" height="4" width="100" />
+      <rect fill={tone} height="4" width={Math.round(value * 100)} />
+    </svg>
+  );
+}
+
+function ReceivedDetail({ dashboard }: { dashboard: AccountingDashboard }) {
+  const values = dashboard.series.map((point) => point.received);
+  const max = Math.max(...values, 0);
+  const points = values.map((value, index) => `${(index / Math.max(1, values.length - 1)) * 100},${28 - (max ? value / max : 0) * 24}`).join(" ");
+  return (
+    <span className="block">
+      {values.length > 1 ? (
+        <svg aria-hidden="true" className="mb-2 block h-7 w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 30">
+          <polyline fill="none" points={points} stroke="#1677f2" strokeLinejoin="round" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+      ) : null}
+      <DetailLine>
+        {dashboard.payment_count} paiement{dashboard.payment_count === 1 ? "" : "s"}
+        {dashboard.production > 0 ? ` · ${percent.format(ratio(dashboard.received, dashboard.production))} de la production` : ""}
+      </DetailLine>
+    </span>
+  );
+}
+
+function AppointmentsDetail({ dashboard }: { dashboard: MainDashboard }) {
+  const { total, completed, scheduled, cancelled, noShow, today } = dashboard.appointments;
+  const segments = [
+    { label: "terminés", value: completed, color: "#19a996" },
+    { label: "à venir", value: scheduled, color: "#1677f2" },
+    { label: "absents", value: noShow, color: "#d9a13b" },
+    { label: "annulés", value: cancelled, color: "#c3ccd7" },
+  ].filter((segment) => segment.value > 0);
+  const now = new Date(dashboard.generatedAt).getTime();
+  const next = today.filter((item) => item.status === "scheduled" && new Date(item.startsAt).getTime() >= now).sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+  if (!total) return <DetailLine>Journée libre dans le planning</DetailLine>;
+  return (
+    <span className="block space-y-2">
+      <svg aria-hidden="true" className="block h-1 w-full overflow-hidden rounded-full" preserveAspectRatio="none" viewBox="0 0 100 4">
+        {segments.map((segment, index) => {
+          const before = segments.slice(0, index).reduce((sum, item) => sum + item.value, 0);
+          return <rect fill={segment.color} height="4" key={segment.label} width={Math.max(0, (segment.value / total) * 100 - (index < segments.length - 1 ? 0.6 : 0))} x={(before / total) * 100} />;
+        })}
+      </svg>
+      <DetailLine>{segments.map((segment) => `${segment.value} ${segment.label}`).join(" · ")}</DetailLine>
+      {next ? <DetailLine>Prochain <span className="metric-number font-semibold text-[var(--navy)]">{appointmentTime.format(new Date(next.startsAt))}</span> · {next.patientName}</DetailLine> : null}
+    </span>
+  );
+}
+
+function ShareDetail({ part, whole, caption }: { part: number; whole: number; caption: string }) {
+  return (
+    <span className="block space-y-2">
+      <Meter value={ratio(part, whole)} tone="#c7a45d" />
+      <DetailLine><span className="metric-number font-semibold text-[var(--navy)]">{percent.format(ratio(part, whole))}</span> {caption}</DetailLine>
+    </span>
+  );
+}
+
+function OutstandingDetail({ dashboard }: { dashboard: AccountingDashboard }) {
+  const owed = dashboard.current_outstanding;
+  const collected = ratio(dashboard.received, dashboard.received + owed);
+  if (owed <= 0) return <DetailLine>Aucun impayé en cours</DetailLine>;
+  return (
+    <span className="block space-y-2">
+      <Meter value={collected} tone="#19a996" />
+      <DetailLine>
+        <span className="metric-number font-semibold text-[var(--navy)]">{percent.format(collected)}</span> réglé · {percent.format(1 - collected)} en attente
+      </DetailLine>
+    </span>
   );
 }
 
 function WelcomeCard({ clinicDate, firstName }: { clinicDate: string; firstName: string }) {
   return (
-    <Card className="clinic-video-card relative min-h-[304px] overflow-hidden !p-0 xl:col-span-5">
-      <Image alt="" aria-hidden="true" className="object-cover object-center" fill priority sizes="(min-width: 1280px) 42vw, 100vw" src="/media/clinic-loop-poster.jpg" />
-      <video
-        aria-hidden="true"
-        autoPlay
-        className="clinic-video-motion absolute inset-0 size-full object-cover object-center"
-        loop
-        muted
-        playsInline
-        poster="/media/clinic-loop-poster.jpg"
-        preload="metadata"
-        tabIndex={-1}
-      >
-        <source src="/media/clinic-loop.mp4" type="video/mp4" />
-      </video>
+    <Card className="clinic-video-card relative min-h-[360px] overflow-hidden !p-0 sm:min-h-[420px]">
+      <Image alt="" aria-hidden="true" className="object-cover object-center" fill loading="eager" sizes="100vw" src="/media/clinic-loop-poster.jpg" />
+      <ClinicVideo />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,28,52,0.93)_0%,rgba(7,43,78,0.76)_48%,rgba(8,62,102,0.18)_82%,rgba(9,73,115,0.06)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,22,42,0.08)_30%,rgba(3,24,47,0.58)_100%)]" />
-      <div className="relative z-10 flex min-h-[304px] max-w-[78%] flex-col p-6 text-white sm:max-w-[64%] sm:p-7">
+      <div className="relative z-10 flex min-h-[360px] max-w-[90%] flex-col p-6 text-white sm:min-h-[420px] sm:max-w-[60%] sm:p-10 lg:p-12">
         <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.16em] text-white/78 uppercase">
           <span aria-hidden="true" className="h-px w-7 bg-[var(--gold-light)]" />
           Centre Dentaire Ouahid
         </div>
         <p className="mt-5 text-xs font-semibold text-white/72">Bienvenue,</p>
-        <h1 className="mt-1 text-[28px] leading-tight font-extrabold tracking-[-0.045em] text-white">Bonjour, {firstName}.</h1>
+        <h1 className="mt-1 text-4xl leading-tight font-extrabold tracking-[-0.03em] text-white sm:text-5xl">Bonjour, {firstName}.</h1>
         <p className="mt-3 text-sm font-semibold text-sky-100">{frenchClinicDate(clinicDate)}</p>
         <p className="mt-2 text-sm leading-6 text-white/76">L’excellence au service de votre sourire.</p>
         <Link className="mt-auto inline-flex min-h-11 w-fit items-center gap-2 text-xs font-bold text-white transition-transform hover:translate-x-1" href={`/appointments?date=${clinicDate}`}>Ouvrir le planning <span aria-hidden="true" className="text-[var(--gold-light)]">→</span></Link>
@@ -150,75 +265,55 @@ function WelcomeCard({ clinicDate, firstName }: { clinicDate: string; firstName:
 }
 
 function AppointmentGauge({ dashboard }: { dashboard: MainDashboard }) {
-  const total = dashboard.appointments.total;
-  const completion = total > 0 ? Math.min(100, dashboard.appointments.completed / total * 100) : 0;
   return (
-    <Card className="min-h-[304px] xl:col-span-3">
-      <CardHeading title="Rythme du jour" subtitle="Progression des rendez-vous" />
-      <div className="relative mx-auto mt-7 h-[118px] max-w-[230px]">
-        <svg aria-label={`${Math.round(completion)} % des rendez-vous terminés`} className="h-full w-full overflow-visible" role="img" viewBox="0 0 220 120">
-          <path d="M25 100a85 85 0 0 1 170 0" fill="none" pathLength="100" stroke="#e7eef7" strokeLinecap="round" strokeWidth="15" />
-          <path d="M25 100a85 85 0 0 1 170 0" fill="none" pathLength="100" stroke="url(#appointment-gradient)" strokeDasharray={`${completion} ${100 - completion}`} strokeLinecap="round" strokeWidth="15" />
-          <defs><linearGradient id="appointment-gradient"><stop stopColor="#57c6ff" /><stop offset="1" stopColor="#1671ee" /></linearGradient></defs>
-        </svg>
-        <div className="absolute inset-x-0 bottom-0 text-center">
-          <strong className="metric-number block text-4xl font-extrabold tracking-[-0.05em] text-[var(--navy)]">{total}</strong>
-          <span className="text-[10px] font-bold tracking-[0.12em] text-slate-500 uppercase">Rendez-vous</span>
-        </div>
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
-        <SmallStat label="Terminés" value={dashboard.appointments.completed} />
-        <SmallStat label="À venir" value={dashboard.appointments.scheduled} />
-      </div>
+    <Card className="xl:col-span-6" texture="clock" title="Rythme du jour">
+      <CardHeading title="Rythme du jour" subtitle="Répartition des rendez-vous aujourd’hui" />
+      <DistributionChart unit="rendez-vous" emptyLabel="Aucun rendez-vous aujourd’hui." items={[
+        { label: "À venir", value: dashboard.appointments.scheduled, color: "#1677f2" },
+        { label: "Terminés", value: dashboard.appointments.completed, color: "#19cbb5" },
+        { label: "Annulés", value: dashboard.appointments.cancelled, color: "#f28b6b" },
+        { label: "Absents", value: dashboard.appointments.noShow, color: "#8d82db" },
+      ]} />
     </Card>
   );
 }
 
 function CabinetBalance({ dashboard }: { dashboard: MainDashboard }) {
-  const active = dashboard.patients.active;
-  const activity = active > 0 ? 100 : 0;
+  const colors = ["#19cbb5", "#1677f2", "#8d82db", "#f28b6b", "#c7a45d"];
+  const treatments = [...dashboard.treatments].sort((a, b) => b.count - a.count);
+  const items = treatments.slice(0, 4).map((item, index) => ({ ...item, value: item.count, color: colors[index] }));
+  if (treatments.length > 4) items.push({ label: "Autres soins", count: 0, value: treatments.slice(4).reduce((sum, item) => sum + item.count, 0), color: colors[4] });
   return (
-    <Card className="min-h-[304px] xl:col-span-4">
-      <CardHeading title="Équilibre du cabinet" subtitle="Activité clinique en un regard" />
-      <div className="mt-7 grid items-center gap-5 sm:grid-cols-[1fr_1.05fr]">
-        <div className="grid gap-3">
-          <InsetMetric label="Rappels à traiter" value={dashboard.reminderCount} />
-          <InsetMetric label="Soins suivis" value={dashboard.treatments.reduce((sum, item) => sum + item.count, 0)} />
-        </div>
-        <div className="relative mx-auto size-40">
-          <svg aria-hidden="true" className="size-full -rotate-[130deg]" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" fill="none" pathLength="100" r="47" stroke="#eaf1f8" strokeDasharray="78 22" strokeLinecap="round" strokeWidth="10" />
-            <circle cx="60" cy="60" fill="none" pathLength="100" r="47" stroke="var(--aqua)" strokeDasharray={`${activity * 0.78} ${100 - activity * 0.78}`} strokeLinecap="round" strokeWidth="10" />
-          </svg>
-          <div className="absolute inset-0 grid place-items-center text-center"><div><span className="text-[10px] font-semibold text-slate-500">Patients actifs</span><strong className="metric-number block text-3xl font-extrabold tracking-tight text-[var(--navy)]">{compactNumber.format(active)}</strong><span className="text-[10px] text-slate-400">dossiers suivis</span></div></div>
-        </div>
+    <Card className="xl:col-span-6" texture="tooth" title="Équilibre du cabinet" details={dashboard.treatments.length ? <table><caption className="mb-3 text-left font-semibold text-[var(--navy)]">Tous les soins réalisés</caption><thead><tr><th scope="col">Soin</th><th scope="col">Nombre exact</th></tr></thead><tbody>{dashboard.treatments.map((item) => <tr key={item.label}><td>{item.label}</td><td>{new Intl.NumberFormat("fr-FR").format(item.count)}</td></tr>)}</tbody></table> : null}>
+      <CardHeading title="Équilibre du cabinet" subtitle="Répartition des soins réalisés · six derniers mois" />
+      <DistributionChart unit="soins réalisés" emptyLabel="Aucun soin réalisé sur cette période." items={items} />
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <SmallStat label="Patients actifs" value={dashboard.patients.active} />
+        <SmallStat label="Rappels à traiter" value={dashboard.reminderCount} />
       </div>
     </Card>
   );
 }
-
-function InsetMetric({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-[16px] border border-white/80 bg-white/62 px-4 py-3 shadow-[inset_0_1px_0_white,0_9px_24px_rgba(25,93,160,0.06)]"><p className="text-[11px] text-slate-500">{label}</p><p className="metric-number mt-1 text-xl font-extrabold text-[var(--navy)]">{value}</p></div>;
-}
-
 function SmallStat({ label, value }: { label: string; value: number }) {
   return <div className="rounded-[13px] bg-[var(--vision-inset)] px-3 py-2.5"><p className="text-slate-500">{label}</p><p className="metric-number mt-1 font-extrabold text-[var(--navy)]">{value}</p></div>;
 }
 
 function CashflowCard({ dashboard, period }: { dashboard: AccountingDashboard; period: DashboardPeriodKey }) {
   return (
-    <Card className="overflow-hidden xl:col-span-8">
+    <Card className="overflow-hidden !bg-white !p-0 xl:col-span-8" texture="money" title="Flux financier" details={<FinancialResultsTable dashboard={dashboard} />}>
+      <div className="px-6 pt-6">
       <CardHeading
         title="Flux financier"
         subtitle={`Production et encaissements · ${periodLabels[period].toLowerCase()}`}
         action={<PeriodNavigation period={period} />}
       />
       <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
-        <Metric label="Production" value={formatDashboardMoney(dashboard.production)} tone="blue" />
-        <Metric label="Encaissements" value={formatDashboardMoney(dashboard.received)} tone="aqua" />
+        <Metric label="Production" value={formatDashboardMoney(dashboard.production)} tone="violet" />
+        <Metric label="Encaissements" value={formatDashboardMoney(dashboard.received)} tone="coral" />
         <Metric label="Solde de période" value={formatDashboardMoney(dashboard.period_net)} />
       </div>
-      <CashflowChart dashboard={dashboard} />
+      </div>
+      <CashflowAreaChart dashboard={dashboard} />
     </Card>
   );
 }
@@ -233,38 +328,23 @@ function PeriodNavigation({ period }: { period: DashboardPeriodKey }) {
   );
 }
 
-function CashflowChart({ dashboard }: { dashboard: AccountingDashboard }) {
-  const points = dashboard.series;
-  const width = 860;
-  const height = 260;
-  const inset = 16;
-  const maximum = Math.max(1, ...points.flatMap((point) => [point.production, point.received]));
-  const pathFor = (field: "production" | "received") => points.map((point, index) => {
-    const x = points.length === 1 ? width / 2 : inset + index * ((width - inset * 2) / (points.length - 1));
-    const y = height - 30 - (point[field] / maximum) * (height - 58);
-    return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const hasActivity = points.some((point) => point.production > 0 || point.received > 0);
-  const productionPath = pathFor("production");
-  const receivedPath = pathFor("received");
-  const areaPath = productionPath ? `${productionPath} L${width - inset},${height - 30} L${inset},${height - 30} Z` : "";
-  return (
-    <div className="relative mt-5 min-h-[260px]">
-      <svg aria-label="Évolution de la production et des encaissements" className="h-[260px] w-full overflow-visible" role="img" viewBox={`0 0 ${width} ${height}`}>
-        <title>Évolution financière</title>
-        <desc>La courbe bleue représente la production, la courbe turquoise les encaissements.</desc>
-        {[0.18, 0.38, 0.58, 0.78].map((ratio) => <line key={ratio} stroke="#b9d4ec" strokeDasharray="4 5" strokeOpacity=".6" x1="0" x2={width} y1={height * ratio} y2={height * ratio} />)}
-        {hasActivity ? <><defs><linearGradient id="cash-area" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#1d8cff" stopOpacity=".34" /><stop offset="1" stopColor="#1d8cff" stopOpacity="0" /></linearGradient></defs><path d={areaPath} fill="url(#cash-area)" /><path d={productionPath} fill="none" stroke="var(--blue)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" /><path d={receivedPath} fill="none" stroke="var(--aqua)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" /></> : <><path d={`M${inset},190 C130,80 210,230 330,132 S540,210 650,104 S770,184 ${width - inset},94`} fill="none" stroke="var(--blue)" strokeLinecap="round" strokeOpacity=".2" strokeWidth="3" /><path d={`M${inset},220 C120,174 240,202 340,180 S540,225 650,178 S780,220 ${width - inset},188`} fill="none" stroke="var(--aqua)" strokeLinecap="round" strokeOpacity=".24" strokeWidth="3" /></>}
-      </svg>
-      {!hasActivity ? <div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="rounded-2xl border border-white bg-white/82 px-5 py-3 text-center shadow-[0_12px_32px_rgba(28,98,168,0.1)] backdrop-blur"><p className="text-sm font-bold text-[var(--navy)]">Aucune activité sur cette période</p><p className="mt-1 text-[11px] text-slate-500">La structure du graphique reste visible sans données fictives.</p></div></div> : null}
-      <div className="absolute right-0 bottom-0 flex items-center gap-5 text-[11px] font-semibold text-slate-500"><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-[var(--blue)]" />Production</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-[var(--aqua)]" />Encaissements</span></div>
-    </div>
-  );
+function FinancialResultsTable({ dashboard }: { dashboard: AccountingDashboard }) {
+  return <table>
+    <caption className="mb-3 text-left font-semibold text-[var(--navy)]">Montants exacts par période</caption>
+    <thead><tr><th scope="col">Période</th><th scope="col">Production</th><th scope="col">Encaissements</th></tr></thead>
+    <tbody>{dashboard.series.map((point) => <tr key={point.bucket_start}><td>{appointmentDay.format(new Date(point.bucket_start))}</td><td>{formatDashboardMoney(point.production)}</td><td>{formatDashboardMoney(point.received)}</td></tr>)}</tbody>
+    <tfoot><tr className="font-bold"><td>Total</td><td>{formatDashboardMoney(dashboard.production)}</td><td>{formatDashboardMoney(dashboard.received)}</td></tr></tfoot>
+  </table>;
 }
 
 function ClinicActivity({ dashboard, financial }: { dashboard: MainDashboard; financial?: AccountingDashboard }) {
-  const bars = financial?.series.slice(-9).map((point) => Math.max(point.production, point.received)) ?? [dashboard.appointments.completed, dashboard.appointments.scheduled, dashboard.appointments.cancelled, dashboard.appointments.noShow];
-  const maximum = Math.max(1, ...bars);
+  const chartPoints = financial ? financial.series.map((point) => ({
+    label: appointmentDay.format(new Date(point.bucket_start)),
+    first: point.production,
+    second: point.received,
+  })) : [{ label: "Aujourd’hui", first: dashboard.appointments.completed, second: dashboard.appointments.scheduled }];
+  const maximum = Math.max(1, ...chartPoints.flatMap((point) => [point.first, point.second]));
+  const valueLabel = (value: number) => financial ? formatDashboardMoney(value) : String(value);
   const items = financial ? [
     { label: "Interventions", value: financial.intervention_count, icon: "calendar" as const },
     { label: "Paiements", value: financial.payment_count, icon: "accounting" as const },
@@ -277,27 +357,51 @@ function ClinicActivity({ dashboard, financial }: { dashboard: MainDashboard; fi
     { label: "Rappels", value: dashboard.reminderCount, icon: "security" as const },
   ];
   return (
-    <Card className="xl:col-span-4">
-      <div className="rounded-[17px] border border-white/80 bg-white/56 px-4 py-5 shadow-inner">
-        <div aria-label="Mini graphique de l’activité" className="flex h-32 items-end justify-between gap-2">
-          {bars.map((value, index) => <span className="w-full max-w-3 rounded-full bg-[linear-gradient(180deg,#57c6ff,#1776ee)] shadow-[0_4px_10px_rgba(23,118,238,0.15)]" key={index} style={{ height: `${Math.max(10, value / maximum * 100)}%` }} />)}
-        </div>
+    <Card className="!bg-white xl:col-span-4" texture="pulse" title="Activité du cabinet" details={financial ? <FinancialResultsTable dashboard={financial} /> : null}>
+      <CardHeading title="Activité du cabinet" subtitle={financial ? "Vue des six derniers mois" : "Journée en cours"} />
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        {items.slice(0, 2).map((item, index) => <div key={item.label}>
+          <strong className={`metric-number block text-2xl font-extrabold ${index === 0 ? "text-[#1686ef]" : "text-[#df604c]"}`}>{new Intl.NumberFormat("fr-FR").format(item.value)}</strong>
+          <p className="mt-1 text-xs text-[var(--muted)]">{item.label}</p>
+        </div>)}
       </div>
-      <div className="mt-5"><CardHeading title="Activité du cabinet" subtitle="Indicateurs issus des données réelles" /></div>
-      <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5">
-        {items.map((item) => <div key={item.label}><span className="grid size-7 place-items-center rounded-lg bg-[var(--blue)] text-white"><AppIcon className="size-3.5" name={item.icon} /></span><p className="mt-2 text-[10px] text-slate-500">{item.label}</p><p className="metric-number mt-0.5 text-lg font-extrabold text-[var(--navy)]">{compactNumber.format(item.value)}</p><div className="mt-2 h-0.5 overflow-hidden rounded-full bg-blue-100"><div className="h-full w-2/3 rounded-full bg-[var(--blue)]" /></div></div>)}
+      <div className="mt-5 flex flex-wrap gap-4 text-[11px] text-[var(--muted)]">
+        <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-[#1686ef]" />{financial ? "Production · MAD" : "Terminés"}</span>
+        <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-[#ff826f]" />{financial ? "Encaissements · MAD" : "À venir"}</span>
+      </div>
+      <svg className="mt-3 h-44 w-full" viewBox="0 0 360 180" role="img" aria-label={financial ? "Production et encaissements par période, en dirhams" : "Rendez-vous terminés et à venir"}>
+        <line x1="8" x2="352" y1="164" y2="164" stroke="#e9edf3" />
+        {chartPoints.map((point, index) => {
+          const x = 16 + (index + 0.5) * 328 / chartPoints.length;
+          const firstY = 164 - point.first / maximum * 140;
+          const secondY = 164 - point.second / maximum * 140;
+          return <g key={`${point.label}-${index}`}>
+            <title>{`${point.label} : ${financial ? "Production" : "Terminés"} ${valueLabel(point.first)}, ${financial ? "Encaissements" : "À venir"} ${valueLabel(point.second)}`}</title>
+            <line x1={x - 3} x2={x - 3} y1={firstY} y2="164" stroke="#1686ef" strokeOpacity="0.23" />
+            <line x1={x + 3} x2={x + 3} y1={secondY} y2="164" stroke="#ff826f" strokeOpacity="0.3" />
+            <circle cx={x - 3} cy={firstY} r="3" fill="#1686ef" />
+            <circle cx={x + 3} cy={secondY} r="3" fill="#ff826f" />
+          </g>;
+        })}
+      </svg>
+      <div className="flex justify-between gap-3 text-[10px] text-[var(--muted)]">
+        <span>{chartPoints[0]?.label}</span><span>{chartPoints.length > 1 ? chartPoints[chartPoints.length - 1]?.label : ""}</span>
+      </div>
+      {!chartPoints.some((point) => point.first || point.second) ? <p className="mt-2 text-xs text-[var(--muted)]">Aucune activité sur cette période.</p> : null}
+      <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+        {items.slice(2).map((item) => <div key={item.label}><p className="text-xs text-[var(--muted)]">{item.label}</p><strong className="metric-number mt-1 block text-lg text-[var(--navy)]">{new Intl.NumberFormat("fr-FR").format(item.value)}</strong></div>)}
       </div>
     </Card>
   );
 }
 
 function UpcomingAppointments({ items }: { items: DashboardAppointment[] }) {
-  return <Card className="xl:col-span-8"><CardHeading title="Prochains rendez-vous" subtitle="À venir dans le planning" />{items.length ? <AppointmentMiniList items={items.slice(0, 6)} showDay /> : <EmptyState text="Aucun rendez-vous à venir." />}</Card>;
+  return <Card className="xl:col-span-8" texture="calendar"><CardHeading title="Prochains rendez-vous" subtitle="À venir dans le planning" />{items.length ? <AppointmentMiniList items={items.slice(0, 6)} showDay /> : <EmptyState text="Aucun rendez-vous à venir." />}</Card>;
 }
 
 function TodayAppointments({ dashboard }: { dashboard: MainDashboard }) {
   return (
-    <Card className="xl:col-span-8">
+    <Card className="xl:col-span-8" texture="calendar">
       <CardHeading title="Planning d’aujourd’hui" subtitle="Patients, horaires et statut" action={<Link className="inline-flex min-h-11 items-center text-[11px] font-bold text-[var(--blue-deep)] hover:underline" href={`/appointments?date=${dashboard.clinicDate}`}>Tout afficher</Link>} />
       <div className="mt-6 hidden grid-cols-[110px_minmax(0,1fr)_100px] border-b border-blue-100/80 pb-2 text-[9px] font-bold tracking-[0.1em] text-slate-400 uppercase sm:grid"><span>Heure</span><span>Patient et motif</span><span>Statut</span></div>
       {dashboard.appointments.today.length ? <AppointmentMiniList items={dashboard.appointments.today} table /> : <EmptyState actionHref={`/appointments?date=${dashboard.clinicDate}`} actionLabel="Ouvrir le planning" text="Aucun rendez-vous programmé aujourd’hui." />}
@@ -307,7 +411,7 @@ function TodayAppointments({ dashboard }: { dashboard: MainDashboard }) {
 
 function OperationsTimeline({ dashboard, financial }: { dashboard: MainDashboard; financial?: AccountingDashboard }) {
   return (
-    <Card className="xl:col-span-4">
+    <Card className="xl:col-span-4" texture="people">
       <CardHeading title="Vue opérationnelle" subtitle="Suivi rapide du cabinet" />
       <ol className="mt-6 space-y-5">
         <TimelineItem color="blue" label="Rendez-vous à venir" value={dashboard.appointments.scheduled} />
@@ -332,8 +436,8 @@ function AppointmentMiniList({ items, showDay = false, table = false }: { items:
   return <ul className={`mt-5 ${table ? "divide-y divide-blue-100/70" : "divide-y divide-blue-100/70"}`}>{items.map((item) => <li className="group grid gap-3 py-3.5 first:pt-0 sm:grid-cols-[110px_minmax(0,1fr)_auto] sm:items-center" key={item.id}><time className="metric-number shrink-0 text-xs font-bold text-[var(--blue-deep)]" dateTime={item.startsAt}>{showDay ? appointmentDay.format(new Date(item.startsAt)) : appointmentTime.format(new Date(item.startsAt))}</time><div className="min-w-0"><Link className="flex min-h-11 items-center truncate text-sm font-bold text-[var(--navy)] transition-colors group-hover:text-[var(--blue)]" href={`/patients/${item.patientId}`}>{item.patientName}</Link><p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{item.title}</p></div>{item.status ? <span className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClasses[item.status]}`}>{statusLabels[item.status]}</span> : <span className="metric-number text-xs font-semibold text-slate-500">{appointmentTime.format(new Date(item.startsAt))}</span>}</li>)}</ul>;
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: "blue" | "aqua" }) {
-  return <div className="min-w-0"><p className="text-[10px] font-semibold text-[var(--muted)]">{label}</p><p className={`metric-number mt-1 break-words text-lg font-extrabold ${tone === "blue" ? "text-[var(--blue-deep)]" : tone === "aqua" ? "text-[#008f9f]" : "text-[var(--navy)]"}`}>{value}</p></div>;
+function Metric({ label, value, tone }: { label: string; value: string; tone?: "blue" | "aqua" | "violet" | "coral" }) {
+  return <div className="min-w-0"><p className="text-[10px] font-semibold text-[var(--muted)]">{label}</p><p className={`metric-number mt-1 break-words text-lg font-extrabold ${tone === "violet" ? "text-[#5548bd]" : tone === "coral" ? "text-[#ad4739]" : tone === "blue" ? "text-[var(--blue-deep)]" : tone === "aqua" ? "text-[#008f9f]" : "text-[var(--navy)]"}`}>{value}</p></div>;
 }
 
 function EmptyState({ text, actionHref, actionLabel }: { text: string; actionHref?: string; actionLabel?: string }) {

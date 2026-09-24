@@ -76,11 +76,28 @@ export function normalizeWhatsAppPhone(value:string|null):string|null{
   return digits;
 }
 
+// Moroccan Arabic calendar wording (e.g. "الخميس، 24 شتنبر 2026") with Latin digits.
+function formatClinicDateArabic(value:string|Date){return new Intl.DateTimeFormat("ar-MA",{timeZone:CLINIC_TIME_ZONE,weekday:"long",day:"numeric",month:"long",year:"numeric",numberingSystem:"latn"}).format(new Date(value));}
+const CLINIC_NAME_AR="مركز وحيد لطب الأسنان";
+const ARABIC_CLOSING="المرجو إخبارنا في حالة تعذّر الحضور.";
+
+// Each message is sent in French, then in Arabic, separated by a blank line.
 export function buildWhatsAppReminderUrl(input:{phone:string|null;firstName:string;startsAt:string;type:ReminderType}):string|null{
   const phone=normalizeWhatsAppPhone(input.phone); if(!phone)return null;
   const timing=input.type==="day_before"?"demain":"dans environ deux heures";
-  const message=`Bonjour ${input.firstName}, rappel de votre rendez-vous ${timing} au Centre Dentaire Ouahid, le ${formatClinicDate(input.startsAt)} à ${formatClinicTime(input.startsAt)}. Merci de nous prévenir en cas d’empêchement.`;
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const timingAr=input.type==="day_before"?"غدًا":"بعد حوالي ساعتين";
+  const time=formatClinicTime(input.startsAt);
+  const french=`Bonjour ${input.firstName}, rappel de votre rendez-vous ${timing} au Centre Dentaire Ouahid, le ${formatClinicDate(input.startsAt)} à ${time}. Merci de nous prévenir en cas d’empêchement.`;
+  const arabic=`مرحبا ${input.firstName}، نذكّركم بموعدكم ${timingAr} في ${CLINIC_NAME_AR}، يوم ${formatClinicDateArabic(input.startsAt)} على الساعة ${time}. ${ARABIC_CLOSING}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(`${french}\n\n${arabic}`)}`;
+}
+
+export function buildWhatsAppAppointmentUrl(input:{phone:string|null;firstName:string;startsAt:string}):string|null{
+  const phone=normalizeWhatsAppPhone(input.phone); if(!phone)return null;
+  const time=formatClinicTime(input.startsAt);
+  const french=`Bonjour ${input.firstName}, votre rendez-vous au Centre Dentaire Ouahid est prévu le ${formatClinicDate(input.startsAt)} à ${time}. Merci de nous prévenir en cas d’empêchement.`;
+  const arabic=`مرحبا ${input.firstName}، موعدكم في ${CLINIC_NAME_AR} محدد يوم ${formatClinicDateArabic(input.startsAt)} على الساعة ${time}. ${ARABIC_CLOSING}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(`${french}\n\n${arabic}`)}`;
 }
 
 export function isReminderDue(input:{startsAt:string;referenceTime:string;type:ReminderType;status:AppointmentStatus;handled:boolean}){

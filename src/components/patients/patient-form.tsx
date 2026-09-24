@@ -4,11 +4,14 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import type { PatientActionState } from "@/app/(dashboard)/patients/actions";
 import { patientLimits, type PatientInput } from "@/lib/patients/validation";
+import { NewPatientPhoto } from "./new-patient-photo";
+import { pendingPhotoKey, photoIdentity } from "./local-photo";
 
 type PatientFormProps = {
   action: (state: PatientActionState, formData: FormData) => Promise<PatientActionState>;
   initialValues?: PatientInput;
   submitLabel: string;
+  photoOnCreate?: boolean;
 };
 
 const emptyValues: PatientInput = {
@@ -39,12 +42,15 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 const inputClass =
   "mt-1.5 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-teal-100";
 
-export function PatientForm({ action, initialValues = emptyValues, submitLabel }: PatientFormProps) {
+export function PatientForm({ action, initialValues = emptyValues, submitLabel, photoOnCreate = false }: PatientFormProps) {
   const [state, formAction, pending] = useActionState(action, initialActionState);
   const [hasMutuelle, setHasMutuelle] = useState(initialValues.hasMutuelle);
   const [hasMedicalHistory, setHasMedicalHistory] = useState(initialValues.hasMedicalHistory);
   const [hasAllergies, setHasAllergies] = useState(initialValues.hasAllergies);
   const formRef = useRef<HTMLFormElement>(null);
+  const photo = useRef<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
 
   useEffect(() => {
     if (Object.keys(state.fieldErrors).length) {
@@ -53,7 +59,22 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
   }, [state]);
 
   return (
-    <form action={formAction} className="space-y-6" ref={formRef}>
+    <form action={formAction} className="space-y-6" ref={formRef} onSubmit={event => {
+      if (!photoOnCreate) return;
+      try {
+        if (photo.current) {
+          const data = new FormData(event.currentTarget);
+          sessionStorage.setItem(pendingPhotoKey, JSON.stringify({ photo: photo.current, submittedAt: Date.now(), identity: photoIdentity(String(data.get("firstName") ?? ""), String(data.get("lastName") ?? ""), String(data.get("phone") ?? ""), String(data.get("dateOfBirth") ?? "")) }));
+        } else sessionStorage.removeItem(pendingPhotoKey);
+        setPhotoError("");
+      } catch {
+        if (photo.current) {
+          event.preventDefault();
+          setPhotoError("Impossible de conserver la photo dans ce navigateur. Retirez-la ou libérez de l’espace avant de réessayer.");
+        }
+      }
+    }}>
+      {photoError ? <p role="alert" className="rounded-md bg-red-50 p-4 text-sm text-red-700">{photoError}</p> : null}
       {state.message ? (
         <div aria-live="polite" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
           {state.message}
@@ -61,6 +82,7 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
       ) : null}
 
       <FormSection description="Informations principales du patient." title="Identité">
+        {photoOnCreate ? <NewPatientPhoto onChange={value => { photo.current = value; setPhotoError(""); }} onBusy={setPhotoBusy} /> : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium text-slate-700">
             Prénom <span aria-hidden="true">*</span>
@@ -142,7 +164,7 @@ export function PatientForm({ action, initialValues = emptyValues, submitLabel }
       </FormSection>
 
       <div className="flex justify-end border-t border-[var(--border)] pt-5">
-        <button className="min-h-11 rounded-md bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60" disabled={pending} type="submit">
+        <button className="min-h-11 rounded-md bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60" disabled={pending || photoBusy} type="submit">
           {pending ? "Enregistrement…" : submitLabel}
         </button>
       </div>

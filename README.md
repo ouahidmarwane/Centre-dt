@@ -2,7 +2,7 @@
 
 Plateforme interne de gestion du Centre Dentaire Ouahid. Elle réunit une
 fondation d'authentification et d'autorisation privée avec patients, odontogramme,
-interventions/paiements, rendez-vous/rappels manuels, ordonnances, documents
+interventions/paiements, rendez-vous/rappels WhatsApp et Telegram, ordonnances, documents
 financiers, dashboards et Security Center. Le docteur est protégé par MFA AAL2.
 
 ## Stack
@@ -44,7 +44,32 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 La clé publiable est exposée au navigateur par conception. Elle ne remplace ni
 l'authentification, ni les permissions, ni les politiques RLS. Aucun secret ou
-service-role key n'est utilisé par l'application.
+service-role key n'est utilisé par le navigateur.
+
+### Rappels WhatsApp et Telegram
+
+Les rendez-vous à venir disposent d’un bouton **Préparer WhatsApp** : il ouvre
+WhatsApp avec un message de confirmation déjà rédigé, sans information clinique
+ni financière. Le personnel relit puis envoie le message.
+
+Pour avertir automatiquement le docteur et l’assistante, créez un groupe
+Telegram privé, ajoutez-y le bot, puis renseignez les variables serveur suivantes
+dans `.env.local` et dans l’hébergeur. Elles ne doivent jamais commencer par
+`NEXT_PUBLIC_` :
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=
+CRON_SECRET=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+Planifiez une requête `POST` vers `/api/cron/appointment-reminders` toutes les
+cinq minutes, avec l’en-tête `Authorization: Bearer <CRON_SECRET>`. Le service
+notifie le groupe à H-2 ; pour le premier rendez-vous à 10 h, il attend
+l’ouverture à 9 h au lieu d’envoyer un message à 8 h. Chaque alerte est
+persistée et ne part qu’une fois ; un échec Telegram est réessayé cinq minutes
+plus tard. Avant l’activation, appliquez la migration Supabase ajoutée au dépôt.
 
 ## Authentification et autorisation
 

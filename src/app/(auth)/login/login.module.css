@@ -1,0 +1,139 @@
+.submit {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 280ms ease, box-shadow 280ms ease;
+}
+
+.submitLabel {
+  transition: opacity 220ms ease, transform 280ms ease;
+}
+
+.submitTooth {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  background: url('/images/floating-tooth.png') center / contain no-repeat;
+  opacity: 0;
+  transform: translateY(8px) scale(0.5) rotate(-18deg);
+  transition: opacity 220ms ease, transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .submit:hover:not(:disabled) {
+    background-color: var(--brand-strong);
+    box-shadow: 0 8px 20px rgba(15, 95, 197, 0.22);
+  }
+
+  .submit:hover:not(:disabled) .submitLabel {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  .submit:hover:not(:disabled) .submitTooth {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+    animation: toothWiggle 2.4s ease-in-out 450ms infinite;
+  }
+}
+
+@keyframes toothWiggle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35% { transform: translateY(-3px) rotate(-9deg); }
+  70% { transform: translateY(1px) rotate(7deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit:hover:not(:disabled) .submitTooth {
+    animation: none;
+  }
+}
+
+.teeth {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tooth {
+  position: absolute;
+  width: clamp(100px, 12vw, 180px);
+  aspect-ratio: 1;
+  opacity: 0.42;
+  filter: blur(4px);
+  animation: float 22s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.tooth:nth-child(1) {
+  top: 3%;
+  left: -4%;
+  rotate: -22deg;
+}
+
+.tooth:nth-child(2) {
+  top: 25%;
+  right: -6%;
+  rotate: 18deg;
+  animation-name: drift;
+  animation-duration: 27s;
+  animation-delay: -6s;
+  filter: blur(6px);
+}
+
+.tooth:nth-child(3) {
+  bottom: 19%;
+  left: -8%;
+  rotate: 15deg;
+  animation-duration: 31s;
+  animation-direction: reverse;
+  animation-delay: -9s;
+}
+
+.tooth:nth-child(4) {
+  bottom: -3%;
+  right: 5%;
+  rotate: -17deg;
+  animation-name: drift;
+  animation-duration: 25s;
+  animation-direction: reverse;
+  animation-delay: -4s;
+  filter: blur(5px);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 8px, 0) rotate(-6deg) scale(0.96);
+  }
+  25% {
+    transform: translate3d(22px, -18px, 0) rotate(3deg) scale(1);
+  }
+  50% {
+    transform: translate3d(8px, -40px, 0) rotate(10deg) scale(1.04);
+  }
+  75% {
+    transform: translate3d(-16px, -12px, 0) rotate(1deg) scale(1);
+  }
+}
+
+@keyframes drift {
+  0%, 100% {
+    transform: translate3d(0, -10px, 0) rotate(5deg) scale(1);
+  }
+  25% {
+    transform: translate3d(-22px, 14px, 0) rotate(-4deg) scale(0.96);
+  }
+  50% {
+    transform: translate3d(-10px, 32px, 0) rotate(-11deg) scale(1);
+  }
+  75% {
+    transform: translate3d(16px, 6px, 0) rotate(-2deg) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooth {
+    animation: none;
+  }
+}

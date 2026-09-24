@@ -18,7 +18,7 @@ export type PatientListItem = Pick<
   | "mutuelle_name"
   | "is_active"
   | "updated_at"
->;
+> & { upcoming_appointment_starts_at: string | null };
 
 export async function listPatients(
   query: string,
@@ -34,7 +34,30 @@ export async function listPatients(
     throw new Error("PATIENT_LIST_UNAVAILABLE");
   }
 
-  return data ?? [];
+  const patients = data ?? [];
+  if (!patients.length) return [];
+
+  const { data: appointments, error: appointmentsError } = await supabase
+    .from("appointments")
+    .select("patient_id,starts_at")
+    .in("patient_id", patients.map((patient) => patient.id))
+    .eq("status", "scheduled")
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at");
+
+  if (appointmentsError) throw new Error("PATIENT_APPOINTMENTS_UNAVAILABLE");
+
+  const nextAppointmentByPatient = new Map<string, string>();
+  for (const appointment of appointments ?? []) {
+    if (!nextAppointmentByPatient.has(appointment.patient_id)) {
+      nextAppointmentByPatient.set(appointment.patient_id, appointment.starts_at);
+    }
+  }
+
+  return patients.map((patient) => ({
+    ...patient,
+    upcoming_appointment_starts_at: nextAppointmentByPatient.get(patient.id) ?? null,
+  }));
 }
 
 export async function getPatient(patientId: string): Promise<Patient | null> {

@@ -4,7 +4,8 @@ import Image from "next/image";
 import { logoutAction } from "@/app/(dashboard)/actions";
 import { AppIcon } from "@/components/app-icon";
 import { ActiveNavigation, RouteTitle, type NavigationItem } from "@/components/app-navigation";
-import { BrandMark } from "@/components/brand-mark";
+import { LiveClock } from "@/components/live-clock";
+import { SidebarTeeth } from "@/components/sidebar-teeth";
 import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 import type { AuthenticatedUser } from "@/lib/auth/server";
 import {
@@ -56,19 +57,20 @@ function UserSummary({ user }: { user: AuthenticatedUser }) {
   );
 }
 
-function ClinicShortcut({ user }: { user: AuthenticatedUser }) {
-  const doctor = user.role === "doctor";
+// Live clock in clinic time; the whole card opens today's schedule.
+function ClinicShortcut() {
   return (
-    <div className="relative mb-5 min-h-40 overflow-hidden rounded-[17px] border border-white/70 shadow-[0_18px_38px_rgba(32,104,177,0.16)]">
-      <Image alt="Composition lumineuse bleue" className="object-cover" fill sizes="220px" src="/assets/vision-ui/help-abstract.jpeg" />
+    <Link aria-label="Heure du cabinet — ouvrir le planning du jour" href="/appointments" className="group relative my-4 block w-full shrink-0 overflow-hidden rounded-[14px] shadow-[0_8px_20px_rgba(32,104,177,0.12)] outline-none transition-shadow hover:shadow-[0_10px_24px_rgba(32,104,177,0.2)] focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2">
+      <Image alt="" aria-hidden="true" className="object-cover" fill sizes="220px" src="/assets/vision-ui/help-abstract.jpeg" />
       <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(29,121,244,0.22),rgba(5,42,102,0.74))]" />
-      <div className="relative z-10 flex min-h-40 flex-col p-4 text-white">
-        <span aria-hidden="true" className="grid size-9 place-items-center rounded-xl bg-white text-[var(--blue)] shadow-md"><AppIcon className="size-5" name={doctor ? "security" : "calendar"} /></span>
-        <p className="mt-4 text-sm font-bold">{doctor ? "Cabinet sous contrôle" : "Journée bien organisée"}</p>
-        <p className="mt-1 text-[11px] text-blue-50/85">{doctor ? "Consultez le centre de sécurité." : "Consultez le planning du jour."}</p>
-        <Link className="mt-3 inline-flex min-h-11 items-center justify-center rounded-[10px] bg-white/16 px-3 py-2 text-center text-[10px] font-bold tracking-wide uppercase backdrop-blur transition-colors hover:bg-white/24" href={doctor ? "/security" : "/appointments"}>{doctor ? "Supervision" : "Planning"}</Link>
+      <div className="relative z-10 p-3 text-white">
+        <LiveClock />
+        <p className="mt-2.5 flex items-center justify-between border-t border-white/15 pt-2 text-[11px] text-blue-50">
+          <span>Heure de Casablanca</span>
+          <span className="font-semibold text-white transition-transform duration-200 group-hover:translate-x-0.5">Planning →</span>
+        </p>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -82,20 +84,23 @@ export function AppShell({
   return (
     <div className="vision-canvas min-h-screen p-2 sm:p-3 xl:p-4 print:p-0">
       <div className="mx-auto min-h-[calc(100vh-1rem)] max-w-[1900px] gap-3 md:grid md:grid-cols-[264px_minmax(0,1fr)] print:block">
-      <aside className="vision-sidebar hidden rounded-[22px] px-4 py-6 md:sticky md:top-3 md:flex md:h-[calc(100vh-1.5rem)] md:flex-col md:self-start print:!hidden">
+      <aside className="vision-sidebar relative isolate hidden overflow-y-auto rounded-[22px] px-4 py-6 md:sticky md:top-3 md:flex md:h-[calc(100vh-1.5rem)] md:flex-col md:self-start print:!hidden">
+        <SidebarTeeth />
         <Link className="flex items-center gap-3 px-2" href="/dashboard">
-          <BrandMark />
-          <span className="text-sm leading-[1.15rem] font-bold tracking-[-0.01em] text-[var(--navy)]">Centre Dentaire<br />Ouahid</span>
+          <Image
+            src="/images/ouahid-logo-navy.png"
+            alt="Ouahid Dental Center"
+            width={1774}
+            height={887}
+            sizes="216px"
+            className="h-auto w-full"
+            loading="eager"
+          />
         </Link>
-        <div className="relative mt-7 overflow-hidden rounded-[15px] border border-white/85 bg-white/55 p-3.5 shadow-[inset_0_1px_0_white,0_10px_25px_rgba(32,104,177,0.06)]">
-          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-[var(--blue)]" />
-          <p className="pl-1 text-sm font-semibold text-[var(--navy)]">Cabinet principal</p>
-          <p className="mt-1 pl-1 text-xs leading-5 text-slate-500">Espace clinique sécurisé</p>
-        </div>
         <div className="mt-7 flex-1">
           <Navigation user={user} />
         </div>
-        <ClinicShortcut user={user} />
+        <ClinicShortcut />
         <div className="border-t border-white/80 pt-4">
           <UserSummary user={user} />
           <form action={logoutAction} className="mt-3">
@@ -111,7 +116,7 @@ export function AppShell({
             <form action="/patients" className="relative ml-auto hidden w-full max-w-xs md:block" method="get" role="search">
               <label className="sr-only" htmlFor="global-patient-search">Rechercher un patient</label>
               <AppIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-400" name="search" />
-              <input className="w-full rounded-[15px] border border-white/90 bg-white/58 py-2.5 pr-4 pl-11 text-xs text-slate-900 shadow-[inset_0_1px_0_white,0_7px_20px_rgba(29,100,170,0.06)] outline-none transition-[border-color,box-shadow,background-color] duration-200 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/70" id="global-patient-search" maxLength={80} name="query" placeholder="Rechercher..." />
+              <input className="w-full rounded-[15px] border border-white/90 bg-white/58 py-2.5 pr-4 pl-11 text-xs text-slate-900 shadow-[inset_0_1px_0_white,0_7px_20px_rgba(29,100,170,0.06)] outline-none transition-[border-color,box-shadow,background-color] duration-200 focus:border-blue-300 focus:bg-white focus:shadow-[inset_0_0_0_1px_rgb(147_197_253)] focus-visible:outline-none" id="global-patient-search" maxLength={80} name="query" placeholder="Rechercher..." />
             </form>
             <details className="group relative hidden sm:block">
               <summary aria-label="Créer" className="grid size-11 cursor-pointer list-none place-items-center rounded-[13px] bg-[var(--blue)] text-white shadow-[0_8px_18px_rgba(36,107,253,0.24)] transition-[transform,background-color] duration-200 hover:bg-[var(--blue-deep)] active:scale-95"><AppIcon name="plus" /></summary>

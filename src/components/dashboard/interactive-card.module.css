@@ -1,0 +1,87 @@
+.card {
+  position: relative;
+  isolation: isolate;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease, border-color 300ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: #d3e1ef;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 16px 36px -20px rgba(16, 44, 76, 0.4);
+  }
+}
+
+.card:focus-within {
+  border-color: rgba(22, 119, 242, 0.5);
+}
+.explorable { cursor: pointer; }
+.dialog { cursor: default; }
+
+.actions { padding: 16px 0 0; display: flex; justify-content: flex-end; }
+.card:global(.\!p-0) .actions { padding: 0 24px 20px; }
+
+.expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: var(--blue-deep);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+.expand:hover { background: #d4e9ff; }
+.expand:active { transform: scale(0.97); }
+
+.dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  color: var(--ink);
+  background: #f8fbff;
+  box-shadow: 0 32px 100px rgba(6, 28, 52, 0.3);
+  overflow: auto;
+}
+.dialog[open] { animation: enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dialog::backdrop { background: rgba(9, 29, 52, 0.52); backdrop-filter: blur(8px); }
+.dialog[open]::backdrop { animation: fade 220ms ease both; }
+.dialog.closing { animation: leave 180ms ease both; }
+.dialog.closing::backdrop { animation: fade 180ms ease reverse both; }
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--hairline);
+  background: white;
+}
+.header h2 { margin: 0; font-size: 22px; font-weight: 700; color: var(--navy); }
+.header p { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
+.close { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--blue-soft); color: var(--navy); cursor: pointer; }
+.close:hover { background: #d4e9ff; }
+.content { padding: 28px; }
+.content :global(.size-60) { width: min(320px, 100%); height: 320px; }
+.content > svg { height: 280px; }
+.details { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--hairline); overflow-x: auto; }
+.details table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.details th { color: var(--navy); text-align: left; background: var(--blue-soft); }
+.details th, .details td { padding: 12px; border-bottom: 1px solid var(--hairline); }
+.details td:not(:first-child), .details th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+@keyframes enter { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes leave { to { opacity: 0; transform: translateY(12px) scale(0.98); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 640px) { .header, .content { padding: 20px; } .header h2 { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) { .card, .expand { transition: none; } .card:hover { transform: none; } .dialog[open], .dialog.closing, .dialog[open]::backdrop { animation: none; } }

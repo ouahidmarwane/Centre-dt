@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildWhatsAppReminderUrl, clinicDateTimeValue, clinicLocalToIso, isReminderDue, normalizeWhatsAppPhone, shiftCalendarDate, validateAppointmentForm } from "./validation.ts";
+import { buildWhatsAppAppointmentUrl, buildWhatsAppReminderUrl, clinicDateTimeValue, clinicLocalToIso, isReminderDue, normalizeWhatsAppPhone, shiftCalendarDate, validateAppointmentForm } from "./validation.ts";
 
 test("clinic local times use Africa/Casablanca rules instead of a fixed offset",()=>{
   assert.equal(clinicLocalToIso("2026-01-15T10:00"),"2026-01-15T09:00:00.000Z");
@@ -33,6 +33,24 @@ test("WhatsApp copy is encoded, minimal and contains no clinical or financial pa
   assert.ok(url?.startsWith("https://wa.me/212612345678?text="));
   const message=decodeURIComponent(url!.split("?text=")[1]);
   assert.match(message,/Centre Dentaire Ouahid/); assert.match(message,/Sara & Co/); assert.doesNotMatch(message,/traitement|montant|diagnostic/i);
+});
+
+test("appointment WhatsApp link has a ready-to-send neutral appointment message",()=>{
+  const url=buildWhatsAppAppointmentUrl({phone:"0612345678",firstName:"Sara",startsAt:"2026-09-13T09:00:00Z"});
+  assert.ok(url?.startsWith("https://wa.me/212612345678?text="));
+  const message=decodeURIComponent(url!.split("?text=")[1]);
+  assert.match(message,/Sara/); assert.match(message,/rendez-vous/); assert.doesNotMatch(message,/traitement|montant|diagnostic/i);
+});
+
+test("WhatsApp messages carry an Arabic version after the French one",()=>{
+  for(const url of [
+    buildWhatsAppReminderUrl({phone:"0612345678",firstName:"Sara",startsAt:"2026-09-24T08:00:00Z",type:"day_before"}),
+    buildWhatsAppAppointmentUrl({phone:"0612345678",firstName:"Sara",startsAt:"2026-09-24T08:00:00Z"}),
+  ]){
+    const [french,arabic]=decodeURIComponent(url!.split("?text=")[1]).split("\n\n");
+    assert.match(french,/^Bonjour Sara/);
+    assert.match(arabic,/^مرحبا Sara/); assert.match(arabic,/مركز وحيد لطب الأسنان/); assert.match(arabic,/09:00/);
+  }
 });
 
 test("reminders stay due after threshold until handled or obsolete",()=>{

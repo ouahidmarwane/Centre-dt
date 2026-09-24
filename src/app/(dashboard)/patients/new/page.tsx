@@ -23,7 +23,7 @@ export default async function NewPatientPage() {
         title="Créer un patient"
       />
       <div className="mt-6 max-w-4xl">
-        <PatientForm action={createPatientAction} submitLabel="Créer le dossier" />
+        <PatientForm action={createPatientAction} submitLabel="Créer le dossier" photoOnCreate />
       </div>
     </>
   );

@@ -101,6 +101,28 @@ body {
   }
 }
 
+.kpi-rise {
+  animation: kpi-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered entrance for list items (CSP forbids inline animation delays). */
+.rise-list > * { animation: kpi-rise 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.rise-list > :nth-child(2) { animation-delay: 50ms; }
+.rise-list > :nth-child(3) { animation-delay: 100ms; }
+.rise-list > :nth-child(4) { animation-delay: 150ms; }
+.rise-list > :nth-child(5) { animation-delay: 200ms; }
+.rise-list > :nth-child(6) { animation-delay: 250ms; }
+.rise-list > :nth-child(n + 7) { animation-delay: 300ms; }
+
+.kpi-rise:nth-child(2) { animation-delay: 70ms; }
+.kpi-rise:nth-child(3) { animation-delay: 140ms; }
+.kpi-rise:nth-child(4) { animation-delay: 210ms; }
+
+@keyframes kpi-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .metric-number {
   font-variant-numeric: tabular-nums lining-nums;
 }
@@ -109,11 +131,14 @@ details > summary::-webkit-details-marker {
   display: none;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+/* In the base layer so Tailwind text-size utilities on buttons and fields still win. */
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
 }
 
 @media (pointer: coarse) {
@@ -161,9 +186,55 @@ a {
   text-decoration: none;
 }
 
-:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
-  outline-offset: 2px;
+/* Base layer so a field with its own focus style can opt out with outline-none. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+.ios-button {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.ios-button:hover:not(:disabled) {
+  box-shadow: 0 5px 14px rgba(16, 24, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.ios-button:active:not(:disabled) {
+  box-shadow: inset 0 1px 3px rgba(16, 24, 40, 0.18);
+  transform: translateY(0);
+}
+
+.ios-control {
+  border-color: #d7dde7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.035);
+}
+
+.ios-table-shell {
+  overflow: hidden;
+  border: 1px solid #dce2eb;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.ios-table-head {
+  background: #f5f7fa;
+}
+
+.ios-table-row {
+  transition: background-color 150ms ease;
+}
+
+.ios-table-row:hover,
+.ios-table-row:focus-within {
+  background: #f0f7ff;
 }
 
 @media (prefers-reduced-motion: reduce) {

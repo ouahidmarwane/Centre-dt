@@ -1,0 +1,41 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tooth {
+  position: absolute;
+  height: auto;
+  max-width: none;
+  animation: float 14s ease-in-out infinite alternate;
+  will-change: transform, filter;
+}
+
+/* Position, size, depth (blur), mirroring and rhythm per tooth: static classes because
+   the CSP blocks inline styles. `scale` flips independently of the animated transform. */
+.tooth:nth-child(1) { top: 3%; left: -34px; width: 118px; opacity: 0.9; filter: blur(7px) brightness(1.12) saturate(0.55); animation-duration: 16s; }
+.tooth:nth-child(2) { top: 27%; right: -30px; width: 96px; opacity: 0.95; scale: -1 1; filter: blur(4px) brightness(1.12) saturate(0.55); animation-duration: 12s; animation-delay: -4s; }
+.tooth:nth-child(3) { top: 44%; left: 30%; width: 70px; opacity: 0.75; animation: float 18s ease-in-out infinite alternate, breathe 7s ease-in-out infinite alternate; animation-delay: -8s, 0s; }
+.tooth:nth-child(4) { top: 60%; left: -26px; width: 92px; opacity: 0.85; scale: -1 1; filter: blur(9px) brightness(1.12) saturate(0.55); animation-duration: 13s; animation-delay: -2s; }
+.tooth:nth-child(5) { top: 74%; right: -20px; width: 128px; opacity: 0.8; filter: blur(12px) brightness(1.12) saturate(0.55); animation-duration: 20s; animation-delay: -10s; }
+.tooth:nth-child(6) { top: 13%; left: 52%; width: 52px; opacity: 0.7; scale: -1 1; animation: float 11s ease-in-out infinite alternate, breathe 9s ease-in-out infinite alternate; animation-delay: -6s, -3s; }
+
+@keyframes float {
+  0% { transform: translate3d(0, 0, 0) rotate(-14deg); }
+  50% { transform: translate3d(8px, -20px, 0) rotate(-2deg); }
+  100% { transform: translate3d(-6px, 12px, 0) rotate(12deg); }
+}
+
+/* Slowly drifts in and out of focus. */
+@keyframes breathe {
+  from { filter: blur(2px) brightness(1.12) saturate(0.55); }
+  to { filter: blur(11px) brightness(1.12) saturate(0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooth { animation: none !important; }
+}

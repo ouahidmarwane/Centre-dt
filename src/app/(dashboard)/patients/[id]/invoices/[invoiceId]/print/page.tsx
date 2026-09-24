@@ -23,6 +23,7 @@ export default async function InvoicePrintPage({ params }: { params: Promise<{ i
   return <div className="document-page">
     <div className="print:hidden mx-auto mb-4 flex max-w-[210mm] items-center justify-between gap-3"><Link className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-strong)]" href={`/patients/${id}`}>← Retour au patient</Link><PrintButton /></div>
     <ClinicDocument
+      showLogo
       documentLabel="Document financier"
       footerText="Document financier interne établi en MAD à partir des données sécurisées du cabinet. Aucune certification fiscale n’est revendiquée."
       subtitle={`N° ${invoice.invoice_number} · Émise le ${date.format(new Date(invoice.issued_at))}`}

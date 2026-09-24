@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { getLoginDestination } from "@/lib/auth/server";
 
 import { LoginForm } from "./login-form";
+import styles from "./login.module.css";
 
 export const metadata: Metadata = { title: "Connexion" };
 
@@ -12,14 +14,20 @@ export default async function LoginPage() {
   if (destination) redirect(destination);
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.72fr)]">
-      <section className="hidden bg-[var(--brand)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="flex items-center gap-3 font-semibold">
-          <span className="grid size-11 place-items-center rounded-lg bg-white text-xl font-bold text-[var(--brand)]">
-            O
-          </span>
-          Centre Dentaire Ouahid
-        </div>
+    <main
+      className="grid min-h-screen bg-[var(--brand)] bg-cover bg-center bg-no-repeat lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.72fr)]"
+      style={{ backgroundImage: "url('/images/clinic-login.png')" }}
+    >
+      <section className="hidden bg-[linear-gradient(180deg,rgba(16,44,76,0.35)_0%,rgba(16,44,76,0.15)_35%,rgba(16,44,76,0.88)_100%)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <Image
+          src="/images/ouahid-logo-transparent.png"
+          alt="Ouahid Dental Center"
+          width={1774}
+          height={887}
+          className="h-auto w-64"
+          loading="eager"
+          sizes="256px"
+        />
         <div className="max-w-xl pb-12">
           <p className="text-sm font-semibold tracking-[0.18em] text-teal-100 uppercase">
             Espace professionnel
@@ -33,14 +41,30 @@ export default async function LoginPage() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center bg-white px-6 py-12 sm:px-12">
-        <div className="w-full max-w-md">
-          <div className="mb-10 flex items-center gap-3 font-semibold lg:hidden">
-            <span className="grid size-10 place-items-center rounded-lg bg-[var(--brand)] text-lg font-bold text-white">
-              O
-            </span>
-            Centre Dentaire Ouahid
-          </div>
+      <section className="relative isolate flex items-center justify-center overflow-hidden bg-white/35 px-6 py-12 backdrop-blur-xl sm:px-12">
+        <div className={styles.teeth} aria-hidden="true">
+          {[0, 1, 2, 3].map((tooth) => (
+            <div key={tooth} className={styles.tooth}>
+              <Image
+                src="/images/floating-tooth.png"
+                alt=""
+                fill
+                sizes="180px"
+                className="object-contain"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="relative z-10 w-full max-w-md">
+          <Image
+            src="/images/ouahid-logo-transparent.png"
+            alt="Ouahid Dental Center"
+            width={1774}
+            height={887}
+            className="mx-auto mb-8 h-auto w-60"
+            loading="eager"
+            sizes="240px"
+          />
           <p className="text-sm font-semibold text-[var(--brand)]">Accès sécurisé</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
             Connexion

@@ -5,7 +5,7 @@ import type { Tables } from "@/types/database.types";
 import { buildWhatsAppReminderUrl, clinicDateValue, clinicLocalToIso, shiftCalendarDate, type ReminderType } from "./validation";
 
 export type Appointment=Tables<"appointments">;
-export type AppointmentListItem=Appointment&{patient:{first_name:string;last_name:string}|null};
+export type AppointmentListItem=Appointment&{patient:{first_name:string;last_name:string;phone:string}|null};
 export type PatientOption={id:string;first_name:string;last_name:string};
 export type ReminderItem={appointmentId:string;patientId:string;patientName:string;startsAt:string;type:ReminderType;whatsappUrl:string|null};
 
@@ -14,7 +14,7 @@ function dayBounds(date:string){const start=clinicLocalToIso(`${date}T00:00`);co
 export async function getSchedule(date:string){
   const supabase=await createClient(); const {start,end}=dayBounds(date);
   const [appointmentsResult,patientsResult,remindersResult]=await Promise.all([
-    supabase.from("appointments").select("*, patient:patients(first_name,last_name)").gte("starts_at",start).lt("starts_at",end).order("starts_at"),
+    supabase.from("appointments").select("*, patient:patients(first_name,last_name,phone)").gte("starts_at",start).lt("starts_at",end).order("starts_at"),
     supabase.from("patients").select("id,first_name,last_name").eq("is_active",true).order("last_name").order("first_name"),
     supabase.rpc("get_due_appointment_reminders",{}),
   ]);
