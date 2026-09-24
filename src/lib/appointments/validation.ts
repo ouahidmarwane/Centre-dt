@@ -1,4 +1,4 @@
-export const CLINIC_TIME_ZONE = "Africa/Casablanca";
+import { ClinicDateTimeFormat } from "../clinic-time.ts";
 
 export const appointmentStatuses = ["scheduled", "completed", "cancelled", "no_show"] as const;
 export type AppointmentStatus = (typeof appointmentStatuses)[number];
@@ -12,7 +12,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const localDateTime=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
 function zonedParts(date:Date){
-  const values=new Intl.DateTimeFormat("en-CA",{timeZone:CLINIC_TIME_ZONE,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date);
+  const values=new ClinicDateTimeFormat("en-CA",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date);
   return Object.fromEntries(values.map(part=>[part.type,part.value]));
 }
 
@@ -43,8 +43,8 @@ export function clinicDateTimeValue(date:Date){
   return `${clinicDateValue(date)}T${clinicTimeValue(date)}`;
 }
 
-export function formatClinicDate(value:string|Date){return new Intl.DateTimeFormat("fr-FR",{timeZone:CLINIC_TIME_ZONE,dateStyle:"full"}).format(new Date(value));}
-export function formatClinicTime(value:string|Date){return new Intl.DateTimeFormat("fr-FR",{timeZone:CLINIC_TIME_ZONE,hour:"2-digit",minute:"2-digit"}).format(new Date(value));}
+export function formatClinicDate(value:string|Date){return new ClinicDateTimeFormat("fr-FR",{dateStyle:"full"}).format(new Date(value));}
+export function formatClinicTime(value:string|Date){return new ClinicDateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"}).format(new Date(value));}
 export function isUuid(value:unknown):value is string{return typeof value==="string"&&uuid.test(value);}
 
 export function validateAppointmentForm(formData:FormData, now=new Date()):{success:true;data:AppointmentInput}|{success:false;fieldErrors:Partial<Record<AppointmentField,string>>}{
@@ -77,7 +77,7 @@ export function normalizeWhatsAppPhone(value:string|null):string|null{
 }
 
 // Moroccan Arabic calendar wording (e.g. "الخميس، 24 شتنبر 2026") with Latin digits.
-function formatClinicDateArabic(value:string|Date){return new Intl.DateTimeFormat("ar-MA",{timeZone:CLINIC_TIME_ZONE,weekday:"long",day:"numeric",month:"long",year:"numeric",numberingSystem:"latn"}).format(new Date(value));}
+function formatClinicDateArabic(value:string|Date){return new ClinicDateTimeFormat("ar-MA",{weekday:"long",day:"numeric",month:"long",year:"numeric",numberingSystem:"latn"}).format(new Date(value));}
 const CLINIC_NAME_AR="مركز وحيد لطب الأسنان";
 const ARABIC_CLOSING="المرجو إخبارنا في حالة تعذّر الحضور.";
 

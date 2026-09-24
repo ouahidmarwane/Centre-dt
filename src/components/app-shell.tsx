@@ -3,11 +3,15 @@ import Image from "next/image";
 
 import { logoutAction } from "@/app/(dashboard)/actions";
 import { AppIcon } from "@/components/app-icon";
+import { CommandPalette } from "@/components/command-palette";
+import { NotificationCenter } from "@/components/notification-center";
+import { IdleGuard } from "@/components/idle-guard";
 import { ActiveNavigation, RouteTitle, type NavigationItem } from "@/components/app-navigation";
 import { LiveClock } from "@/components/live-clock";
 import { SidebarTeeth } from "@/components/sidebar-teeth";
 import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 import type { AuthenticatedUser } from "@/lib/auth/server";
+import type { QuickCommand } from "@/lib/search/quick-search";
 import {
   doctorOnlyRoutePermissions,
   hasPermission,
@@ -17,6 +21,8 @@ const operationalNavigation = [
   { href: "/dashboard", label: "Tableau de bord", icon: "dashboard", group: "cabinet" },
   { href: "/patients", label: "Patients", icon: "patients", group: "cabinet" },
   { href: "/appointments", label: "Rendez-vous", icon: "calendar", group: "cabinet" },
+  { href: "/payments", label: "Recouvrement", icon: "receipt", group: "cabinet" },
+  { href: "/stock", label: "Stock", icon: "box", group: "cabinet" },
 ] as const;
 
 const doctorNavigation = [
@@ -28,6 +34,13 @@ const doctorNavigation = [
     permission: doctorOnlyRoutePermissions["/accounting"],
   },
   {
+    href: "/statistics",
+    label: "Statistiques",
+    icon: "chart",
+    group: "gestion",
+    permission: doctorOnlyRoutePermissions["/statistics"],
+  },
+  {
     href: "/security",
     label: "Supervision",
     icon: "security",
@@ -36,12 +49,34 @@ const doctorNavigation = [
   },
 ] as const;
 
-function Navigation({ user }: { user: AuthenticatedUser }) {
-  const items: NavigationItem[] = [
+function navigationFor(user: AuthenticatedUser): NavigationItem[] {
+  return [
     ...operationalNavigation,
     ...doctorNavigation.filter((item) => hasPermission(user.role, item.permission)),
   ];
-  return <ActiveNavigation items={items} />;
+}
+
+function Navigation({ user }: { user: AuthenticatedUser }) {
+  return <ActiveNavigation items={navigationFor(user)} />;
+}
+
+const commandKeywords: Record<string, string> = {
+  "/dashboard": "accueil dashboard",
+  "/patients": "dossiers liste",
+  "/appointments": "agenda planning calendrier",
+  "/accounting": "finances chiffre",
+  "/security": "sécurité audit sessions",
+  "/payments": "impayés relances soldes recouvrement",
+  "/stock": "consommables fournitures commande inventaire",
+  "/statistics": "chiffre affaires mois absences nouveaux patients",
+};
+
+function quickCommandsFor(user: AuthenticatedUser): QuickCommand[] {
+  const pages: QuickCommand[] = navigationFor(user).map((item) => ({ href: item.href, label: item.label, keywords: commandKeywords[item.href] ?? "", section: "Pages" }));
+  const actions: QuickCommand[] = [];
+  if (hasPermission(user.role, "patients.write")) actions.push({ href: "/patients/new", label: "Nouveau patient", keywords: "créer ajouter dossier", section: "Actions" });
+  if (hasPermission(user.role, "appointments.write")) actions.push({ href: "/appointments#nouveau-rendez-vous", label: "Nouveau rendez-vous", keywords: "créer ajouter agenda", section: "Actions" });
+  return [...pages, ...actions];
 }
 
 function UserSummary({ user }: { user: AuthenticatedUser }) {
@@ -83,6 +118,7 @@ export function AppShell({
 }) {
   return (
     <div className="vision-canvas min-h-screen p-2 sm:p-3 xl:p-4 print:p-0">
+      <IdleGuard />
       <div className="mx-auto min-h-[calc(100vh-1rem)] max-w-[1900px] gap-3 md:grid md:grid-cols-[264px_minmax(0,1fr)] print:block">
       <aside className="vision-sidebar relative isolate hidden overflow-y-auto rounded-[22px] px-4 py-6 md:sticky md:top-3 md:flex md:h-[calc(100vh-1.5rem)] md:flex-col md:self-start print:!hidden">
         <SidebarTeeth />
@@ -103,7 +139,7 @@ export function AppShell({
         <ClinicShortcut />
         <div className="border-t border-white/80 pt-4">
           <UserSummary user={user} />
-          <form action={logoutAction} className="mt-3">
+          <form action={logoutAction} className="mt-3" data-logout="">
             <PendingSubmitButton className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 hover:text-[var(--navy)] disabled:opacity-60" pendingLabel="Déconnexion…">Se déconnecter</PendingSubmitButton>
           </form>
         </div>
@@ -113,11 +149,8 @@ export function AppShell({
         <header className="sticky top-0 z-20 bg-[rgba(239,248,255,0.78)] px-4 py-3.5 backdrop-blur-xl sm:px-6 lg:px-7 print:hidden">
           <div className="flex min-h-12 items-center gap-5">
             <div className="min-w-44"><RouteTitle /></div>
-            <form action="/patients" className="relative ml-auto hidden w-full max-w-xs md:block" method="get" role="search">
-              <label className="sr-only" htmlFor="global-patient-search">Rechercher un patient</label>
-              <AppIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-400" name="search" />
-              <input className="w-full rounded-[15px] border border-white/90 bg-white/58 py-2.5 pr-4 pl-11 text-xs text-slate-900 shadow-[inset_0_1px_0_white,0_7px_20px_rgba(29,100,170,0.06)] outline-none transition-[border-color,box-shadow,background-color] duration-200 focus:border-blue-300 focus:bg-white focus:shadow-[inset_0_0_0_1px_rgb(147_197_253)] focus-visible:outline-none" id="global-patient-search" maxLength={80} name="query" placeholder="Rechercher..." />
-            </form>
+            <CommandPalette commands={quickCommandsFor(user)} />
+            <NotificationCenter userId={user.id} />
             <details className="group relative hidden sm:block">
               <summary aria-label="Créer" className="grid size-11 cursor-pointer list-none place-items-center rounded-[13px] bg-[var(--blue)] text-white shadow-[0_8px_18px_rgba(36,107,253,0.24)] transition-[transform,background-color] duration-200 hover:bg-[var(--blue-deep)] active:scale-95"><AppIcon name="plus" /></summary>
               <div className="absolute right-0 z-30 mt-3 w-52 rounded-xl border border-[var(--hairline)] bg-white p-2 shadow-[0_16px_36px_rgba(16,44,76,0.14)]">
@@ -140,7 +173,7 @@ export function AppShell({
                 </form>
                 <div className="my-3 border-t border-[var(--border)]" />
                 <Navigation user={user} />
-                <form action={logoutAction} className="mt-3 border-t border-[var(--border)] pt-3">
+                <form action={logoutAction} className="mt-3 border-t border-[var(--border)] pt-3" data-logout="">
                   <PendingSubmitButton className="min-h-11 w-full px-3 py-2 text-left text-sm font-semibold disabled:opacity-60" pendingLabel="Déconnexion…">Se déconnecter</PendingSubmitButton>
                 </form>
               </div>

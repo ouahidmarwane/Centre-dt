@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import {
   createIpPolicyAction,
   disableIpPolicyAction,
@@ -6,10 +7,9 @@ import {
 import type { SecurityCenterData, SecuritySeverity } from "@/lib/security/data";
 import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 
-const dateTime = new Intl.DateTimeFormat("fr-MA", {
+const dateTime = new ClinicDateTimeFormat("fr-MA", {
   dateStyle: "medium",
   timeStyle: "short",
-  timeZone: "Africa/Casablanca",
 });
 
 const eventLabels: Record<string, string> = {

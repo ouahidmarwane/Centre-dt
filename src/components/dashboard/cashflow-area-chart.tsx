@@ -1,10 +1,11 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import { useState } from "react";
 import type { AccountingDashboard } from "@/lib/accounting/data";
 import { formatDashboardMoney } from "@/lib/dashboard/presentation";
 
-const dateLabel = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Africa/Casablanca" });
+const dateLabel = new ClinicDateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
 export function CashflowAreaChart({ dashboard }: { dashboard: AccountingDashboard }) {
   const [active, setActive] = useState<number | null>(null);

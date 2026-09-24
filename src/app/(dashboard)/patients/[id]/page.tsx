@@ -5,6 +5,10 @@ import { archivePatientAction } from "@/app/(dashboard)/patients/actions";
 import { createDentalFindingAction, resolveDentalFindingAction, updateDentalFindingAction } from "@/app/(dashboard)/patients/[id]/odontogram-actions";
 import { cancelInterventionAction, createInterventionAction, recordPaymentAction, reversePaymentAction, updateInterventionAction } from "@/app/(dashboard)/patients/[id]/finance-actions";
 import { PatientFinances } from "@/components/finance/patient-finances";
+import { PatientTreatmentPlans } from "@/components/treatment-plans/patient-treatment-plans";
+import { acceptTreatmentPlanAction, cancelTreatmentPlanAction, completeTreatmentStepAction, createTreatmentPlanAction } from "@/app/(dashboard)/patients/[id]/treatment-plan-actions";
+import { getPatientTreatmentPlans } from "@/lib/treatment-plans/data";
+import { remainingToPay } from "@/lib/treatment-plans/validation";
 import { Odontogram } from "@/components/odontogram/odontogram";
 import { SpotlightSurface } from "@/components/dashboard/spotlight-surface";
 import { formatDashboardMoney } from "@/lib/dashboard/presentation";
@@ -55,7 +59,9 @@ export default async function PatientDetailsPage({
   const query = await searchParams;
   const age = calculateAge(patient.date_of_birth);
   const archiveAction = archivePatientAction.bind(null, patient.id);
-  const [dentalChart,finances,appointments,prescriptions,financialDocuments] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id),getPatientPrescriptionSummaries(patient.id),getPatientFinancialDocuments(patient.id)]);
+  const [dentalChart,finances,appointments,prescriptions,financialDocuments,treatmentPlans] = await Promise.all([getDentalChart(patient.id),getPatientFinances(patient.id),getPatientAppointments(patient.id),getPatientPrescriptionSummaries(patient.id),getPatientFinancialDocuments(patient.id),getPatientTreatmentPlans(patient.id).catch(() => null)]);
+  const stepTokens = Object.fromEntries((treatmentPlans ?? []).flatMap((plan) => plan.steps.filter((step) => !step.done).map((step) => [step.id, crypto.randomUUID()])));
+  const totalRemaining = remainingToPay(finances.summary.outstanding, treatmentPlans ?? []);
   const now = new Date();
   const interventionToken = crypto.randomUUID();
   const prescriptionToken = crypto.randomUUID();
@@ -68,7 +74,7 @@ export default async function PatientDetailsPage({
   const whatsappReminder = nextAppointment ? buildWhatsAppAppointmentUrl({ phone: patient.phone, firstName: patient.first_name, startsAt: nextAppointment.starts_at }) : null;
   const facts = [
     { label: "Prochain rendez-vous", value: nextAppointment ? formatClinicDate(nextAppointment.starts_at) : "Aucun", note: nextAppointment ? `à ${formatClinicTime(nextAppointment.starts_at)} · ${nextAppointment.title}` : "Rien de planifié", texture: "calendar" as const },
-    { label: "Reste à payer", value: formatDashboardMoney(finances.summary.outstanding), note: finances.summary.outstanding > 0 ? "À régulariser" : "Compte soldé", texture: "money" as const, alert: finances.summary.outstanding > 0 },
+    { label: "Reste à payer", value: formatDashboardMoney(finances.summary.outstanding), note: totalRemaining > finances.summary.outstanding ? `+ ${formatDashboardMoney(totalRemaining - finances.summary.outstanding)} de séances à venir` : finances.summary.outstanding > 0 ? "À régulariser" : "Compte soldé", texture: "money" as const, alert: finances.summary.outstanding > 0 },
     { label: "Total réglé", value: formatDashboardMoney(finances.summary.total_received), note: `sur ${formatDashboardMoney(finances.summary.total_due)} facturés`, texture: "money" as const },
     { label: "Soins enregistrés", value: String(finances.interventions.length), note: `${dentalChart.findings.length} constat${dentalChart.findings.length > 1 ? "s" : ""} dentaire${dentalChart.findings.length > 1 ? "s" : ""}`, texture: "tooth" as const },
   ];
@@ -217,6 +223,26 @@ export default async function PatientDetailsPage({
         role={user.role}
         updateAction={updateDentalFindingAction.bind(null, patient.id)}
       />
+
+      {hasPermission(user.role, "treatment_plans.read") && !treatmentPlans ? (
+        <p className="mt-6 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Les plans de traitement sont momentanément indisponibles. Le reste du dossier est à jour.</p>
+      ) : null}
+      {hasPermission(user.role, "treatment_plans.read") && treatmentPlans ? (
+        <PatientTreatmentPlans
+          acceptAction={acceptTreatmentPlanAction.bind(null, patient.id)}
+          canProgress={hasPermission(user.role, "treatment_plans.progress")}
+          canWrite={hasPermission(user.role, "treatment_plans.write")}
+          cancelAction={cancelTreatmentPlanAction.bind(null, patient.id)}
+          completeAction={completeTreatmentStepAction.bind(null, patient.id)}
+          createAction={createTreatmentPlanAction.bind(null, patient.id)}
+          outstanding={finances.summary.outstanding}
+          patientActive={patient.is_active}
+          planToken={crypto.randomUUID()}
+          plans={treatmentPlans}
+          stepTokens={stepTokens}
+          today={clinicDateValue(now)}
+        />
+      ) : null}
 
       <PatientFinances
         cancelAction={cancelInterventionAction.bind(null,patient.id)}

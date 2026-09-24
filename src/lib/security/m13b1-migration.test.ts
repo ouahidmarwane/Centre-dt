@@ -155,7 +155,7 @@ test("all authenticated RLS policies remain anchored to assurance-aware wrappers
   const policies = [...sql.matchAll(/create policy\s+[^;]+;/gi)]
     .map((match) => match[0])
     .filter((policy) => /to authenticated/i.test(policy));
-  assert.equal(policies.length, 26);
+  assert.equal(policies.length, 32);
   for (const policy of policies) {
     assert.match(
       policy,

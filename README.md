@@ -123,6 +123,41 @@ politique de suppression physique.
 `audit_logs`; leurs métadonnées restent vides afin de ne dupliquer aucun nom,
 téléphone, adresse, antécédent ou allergie.
 
+## Fonctionnalités du quotidien (septembre 2026)
+
+- **Recherche rapide (Ctrl+K / ⌘K)** : patients par nom ou téléphone, pages et
+  actions, depuis n'importe quel écran (réutilise `search_patients`).
+- **Liste d'attente** (page Rendez-vous) : un patient attend au plus une fois ;
+  un rendez-vous annulé apparaît dans « Créneaux libérés » avec les patients
+  compatibles (durée, matin/après-midi, urgents d'abord), une proposition
+  WhatsApp et la réservation directe (`book_waitlist_entry`).
+- **Plans de traitement** (dossier patient) : créés par le docteur ; le devis
+  (somme des séances) est figé à l'acceptation ; valider une séance crée une
+  intervention réalisée via `create_intervention`. « Reste à payer au total » =
+  déjà facturé non réglé + séances restantes des devis acceptés.
+- **Recouvrement** (`/payments`) : relance due après 7 jours d'impayé (répartition
+  des paiements sur les soins les plus anciens), puis au plus tous les 14 jours ;
+  message WhatsApp prérempli, confirmation « C'est envoyé ».
+- **Stock** (`/stock`) : entrées, sorties et inventaires historisés, jamais de
+  stock négatif, liste de commande par fournisseur ; archivage réservé au docteur.
+- **Statistiques** (`/statistics`, docteur) : chiffre d'affaires par type de soin,
+  encaissements, nouveaux patients et taux de rendez-vous manqués, sur 12 mois.
+
+Chaque matin après 09:00 (Casablanca), la route cron envoie aussi sur Telegram un
+récapitulatif du nombre de relances d'impayés dues et d'articles sous le seuil
+(des nombres uniquement, aucune donnée patient).
+
+### Tests d'intégration SQL
+
+`supabase/tests/*.test.sql` exécutent les vraies RPC avec des rôles simulés
+(assistante, docteur AAL1/AAL2) dans une transaction toujours annulée. Ils
+refusent toute base non locale :
+
+```bash
+npx supabase start   # pile locale avec toutes les migrations
+npm run test:db      # CONTAINER_ENGINE=podman si Docker n'est pas utilisé
+```
+
 ## Migrations Supabase
 
 Les migrations historiques approuvées et appliquées sont dans

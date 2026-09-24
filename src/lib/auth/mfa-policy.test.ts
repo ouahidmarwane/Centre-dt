@@ -15,10 +15,13 @@ test("TOTP validation rejects malformed input", () => {
   assert.equal(validateTotpCode(new File([], "code")), null);
 });
 
-test("routing matrix has no doctor MFA loops and preserves assistant authority", () => {
+test("routing matrix has no MFA loops and applies the same TOTP rules to assistants", () => {
   const assistant = { status: "active", role: "assistant", aal: "aal1", verifiedTotpCount: 0 } as const;
-  assert.deepEqual(decideMfaRoute(assistant, "application"), { action: "allow" });
-  assert.deepEqual(decideMfaRoute(assistant, "enroll"), { action: "redirect", destination: "/dashboard" });
+  assert.deepEqual(decideMfaRoute(assistant, "application"), { action: "redirect", destination: "/mfa/enroll" });
+  assert.deepEqual(decideMfaRoute(assistant, "enroll"), { action: "allow" });
+  const enrolledAssistant = { ...assistant, verifiedTotpCount: 1 } as const;
+  assert.deepEqual(decideMfaRoute(enrolledAssistant, "application"), { action: "redirect", destination: "/mfa/challenge" });
+  assert.deepEqual(decideMfaRoute(enrolledAssistant, "challenge"), { action: "allow" });
 
   const unenrolledDoctor = { status: "active", role: "doctor", aal: "aal1", verifiedTotpCount: 0 } as const;
   assert.deepEqual(decideMfaRoute(unenrolledDoctor, "application"), { action: "redirect", destination: "/mfa/enroll" });
@@ -34,8 +37,9 @@ test("routing matrix has no doctor MFA loops and preserves assistant authority",
   assert.deepEqual(decideMfaRoute(aal2Doctor, "application"), { action: "allow" });
   assert.deepEqual(decideMfaRoute(aal2Doctor, "challenge"), { action: "redirect", destination: "/dashboard" });
 
-  const aal2Assistant = { ...assistant, aal: "aal2" } as const;
+  const aal2Assistant = { ...enrolledAssistant, aal: "aal2" } as const;
   assert.deepEqual(decideMfaRoute(aal2Assistant, "application"), { action: "allow" });
+  assert.deepEqual(decideMfaRoute({ ...assistant, aal: "aal2" }, "application"), { action: "redirect", destination: "/forbidden" });
 });
 
 test("anonymous, inactive and multiple-factor states fail closed", () => {

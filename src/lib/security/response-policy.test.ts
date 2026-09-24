@@ -21,7 +21,7 @@ test("unsafe eval is development-only", () => {
 });
 
 test("auth-aware routes are private no-store", () => {
-  for (const path of ["/", "/login", "/mfa/enroll", "/mfa/challenge", "/forbidden", "/dashboard", "/patients/abc", "/appointments", "/accounting", "/security"]) {
+  for (const path of ["/", "/login", "/mfa/enroll", "/mfa/challenge", "/forbidden", "/dashboard", "/patients/abc", "/appointments", "/accounting", "/security", "/payments", "/stock", "/statistics"]) {
     assert.equal(isPrivateNoStorePath(path), true, path);
   }
   assert.equal(isPrivateNoStorePath("/media/clinic-loop.mp4"), false);

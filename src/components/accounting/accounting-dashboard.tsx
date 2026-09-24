@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Link from "next/link";
 
 import { SpotlightSurface, type SpotlightTexture } from "@/components/dashboard/spotlight-surface";
@@ -46,10 +47,10 @@ const money = new Intl.NumberFormat("fr-MA", {
   maximumFractionDigits: 2,
 });
 
-const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Africa/Casablanca" });
-const month = new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric", timeZone: "Africa/Casablanca" });
-const shortMonth = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "Africa/Casablanca" });
-const dayNumber = new Intl.DateTimeFormat("fr-FR", { day: "numeric", timeZone: "Africa/Casablanca" });
+const date = new ClinicDateTimeFormat("fr-FR", { dateStyle: "medium" });
+const month = new ClinicDateTimeFormat("fr-FR", { month: "short", year: "numeric" });
+const shortMonth = new ClinicDateTimeFormat("fr-FR", { month: "short" });
+const dayNumber = new ClinicDateTimeFormat("fr-FR", { day: "numeric" });
 const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 0 });
 
 function displayDate(value: string, monthly = false) {

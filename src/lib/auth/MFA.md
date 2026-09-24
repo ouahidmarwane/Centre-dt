@@ -1,4 +1,9 @@
-# Doctor TOTP operations
+# Staff TOTP operations
+
+Since 2026-09-24 every clinic role (doctor and assistant) needs exactly one verified
+TOTP factor and an AAL2 session before any clinic authority: `private.current_user_role()`
+returns no role to an AAL1 session, whatever the profile. The rules below, written for
+the doctor, apply identically to assistants.
 
 The legitimate doctor must complete the first TOTP enrollment from the trusted
 clinic workstation **before** clinical production use or exposure. Before a
@@ -11,11 +16,12 @@ exactly one verified TOTP factor **and** AAL2. More than one verified TOTP facto
 fails closed regardless of AAL and requires administrative review. Zero verified
 factors at AAL1 routes to enrollment; zero at AAL2 is anomalous and fails closed
 through the forbidden path. Failed or malformed factor enumeration also fails
-closed. The doctor factor-count policy does not apply to assistants.
+closed. The same factor-count policy applies to assistants: each assistant must enroll
+their own authenticator from the clinic workstation at their first login.
 
 There is intentionally no self-service factor removal, replacement, disabling,
 second-factor enrollment, or recovery bypass. Recovery is a future, separately
-reviewed administrative procedure. There is no assistant MFA-reset workflow and
+reviewed administrative procedure. There is no MFA-reset workflow for any role and
 no application backdoor. A lost authenticator requires administrative recovery;
 the exact recovery procedure and current Supabase Dashboard controls must be
 verified immediately before production reliance rather than inferred here.
@@ -29,5 +35,9 @@ and `requirePermission` remain authoritative.
 MFA protects against password-only compromise. It does not neutralize a stolen
 active AAL2 session. Profile deactivation removes application authority through
 RLS and RPC checks, but does not necessarily destroy the underlying GoTrue
-refresh session. Browser closure is not treated as a guaranteed logout, and no
-fixed AAL2 expiration duration is claimed.
+refresh session. Browser closure is not treated as a guaranteed logout. Since 2026-09-24 an
+inactivity limit applies to every role: after 30 minutes without user activity the
+session is signed out (password + TOTP again). The proxy enforces it on every request
+through the httpOnly `cdo_last_activity` cookie (missing, malformed, stale or future
+values end the session); the notification poll is checked but never renews it; a
+client guard warns 2 minutes before and signs out an abandoned screen.

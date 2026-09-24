@@ -93,15 +93,19 @@ test("doctor AAL1 routes through enrollment/challenge before protected action", 
   }
 });
 
-test("assistants bypass doctor enumeration but never gain doctor permissions", async () => {
-  for (const aal of ["aal1", "aal2"] as const) {
-    const allowed = await mockedGuard({ role: "assistant", aal, lookup: "throws" });
-    assert.equal((await allowed.protectedAction()).role, "assistant");
-    assert.equal(allowed.calls.factors, 0);
-    const denied = await mockedGuard({ role: "assistant", aal });
-    await assert.rejects(denied.protectedAction("security.manage"), /redirect:\/forbidden/);
-    assert.equal(denied.calls.mutations, 0);
+test("assistants follow the TOTP guard and never gain doctor permissions", async () => {
+  for (const count of [0, 1]) {
+    const pending = await mockedGuard({ role: "assistant", aal: "aal1", count });
+    await assert.rejects(pending.protectedAction(), count === 0 ? /redirect:\/mfa\/enroll/ : /redirect:\/mfa\/challenge/);
+    assert.equal(pending.calls.mutations, 0);
   }
+  const failedLookup = await mockedGuard({ role: "assistant", aal: "aal2", lookup: "throws" });
+  await assert.rejects(failedLookup.protectedAction(), /redirect:\/forbidden/);
+  const allowed = await mockedGuard({ role: "assistant", aal: "aal2", count: 1 });
+  assert.equal((await allowed.protectedAction()).role, "assistant");
+  const denied = await mockedGuard({ role: "assistant", aal: "aal2", count: 1 });
+  await assert.rejects(denied.protectedAction("security.manage"), /redirect:\/forbidden/);
+  assert.equal(denied.calls.mutations, 0);
 });
 
 test("inactive role/AAL matrix and anonymous are denied before factor enumeration", async () => {

@@ -313,7 +313,7 @@ function CancelForm({action,onClose}:{action:(s:AppointmentActionState,f:FormDat
       <button className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-xs font-semibold text-slate-500 hover:bg-white" onClick={onClose} type="button">Garder le rendez-vous</button>
       <button className={`${dangerLink} min-h-11 border border-red-200 bg-white px-3`} disabled={pending}>{pending?"Annulation…":"Confirmer l’annulation"}</button>
     </div>
-    {state.message?<p aria-live="polite" className="mt-2 text-xs text-red-700" role="alert">{state.message}</p>:null}
+    {state.message?<p aria-live="polite" className={`mt-2 text-xs ${state.success?"text-[#0e7c6d]":"text-red-700"}`} role={state.success?"status":"alert"}>{state.success?"✓ ":""}{state.message}</p>:null}
   </form>;
 }
 

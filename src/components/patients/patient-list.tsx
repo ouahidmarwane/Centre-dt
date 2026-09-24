@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
@@ -16,10 +17,10 @@ type Status = PatientSearchState["status"];
 type Sort = "recent" | "name" | "next";
 
 const updatedFormatter = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
-const apptDay = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", timeZone: "Africa/Casablanca" });
-const apptMonth = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "Africa/Casablanca" });
-const apptWeekday = new Intl.DateTimeFormat("fr-FR", { weekday: "long", timeZone: "Africa/Casablanca" });
-const apptTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Casablanca" });
+const apptDay = new ClinicDateTimeFormat("fr-FR", { day: "2-digit" });
+const apptMonth = new ClinicDateTimeFormat("fr-FR", { month: "short" });
+const apptWeekday = new ClinicDateTimeFormat("fr-FR", { weekday: "long" });
+const apptTime = new ClinicDateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 const statusOptions: { value: Status; label: string }[] = [
   { value: "active", label: "Actifs" },

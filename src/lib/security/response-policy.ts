@@ -58,6 +58,12 @@ export function isPrivateNoStorePath(pathname: string): boolean {
     pathname === "/accounting" ||
     pathname.startsWith("/accounting/") ||
     pathname === "/security" ||
-    pathname.startsWith("/security/")
+    pathname.startsWith("/security/") ||
+    pathname === "/payments" ||
+    pathname.startsWith("/payments/") ||
+    pathname === "/stock" ||
+    pathname.startsWith("/stock/") ||
+    pathname === "/statistics" ||
+    pathname.startsWith("/statistics/")
   );
 }

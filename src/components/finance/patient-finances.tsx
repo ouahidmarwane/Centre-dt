@@ -1,4 +1,6 @@
 "use client";
+
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import { useActionState } from "react";
 import type { FinanceActionState } from "@/app/(dashboard)/patients/[id]/finance-actions";
 import type { DentalFinding } from "@/lib/odontogram/data";
@@ -15,7 +17,7 @@ const money=new Intl.NumberFormat("fr-MA",{style:"currency",currency:"MAD",minim
 const date=new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium",timeZone:"UTC"});
 const day=new Intl.DateTimeFormat("fr-FR",{day:"2-digit",timeZone:"UTC"});
 const month=new Intl.DateTimeFormat("fr-FR",{month:"short",timeZone:"UTC"});
-const dateTime=new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Casablanca"});
+const dateTime=new ClinicDateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short"});
 const statusLabel=(status:string)=>status==="cancelled"?"Annulée":status==="performed"?"Réalisée":"Planifiée";
 const statusTone=(status:string)=>status==="cancelled"?"slate" as const:status==="performed"?"green" as const:"blue" as const;
 

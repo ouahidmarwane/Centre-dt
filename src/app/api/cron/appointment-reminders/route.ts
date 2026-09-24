@@ -1,12 +1,14 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { formatClinicDate, formatClinicTime } from "@/lib/appointments/validation";
+import { isStaffDigestKind, staffDigestText } from "@/lib/notifications/staff-digests";
 import { getSupabaseEnvironment } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type DueReminder = { notification_id: string; appointment_id: string; patient_id: string; patient_first_name: string; starts_at: string };
+type DueDigest = { notification_id: string; kind: string; item_count: number };
 
 function sameSecret(received: string | null, expected: string) {
   if (!received) return false;
@@ -34,6 +36,27 @@ async function complete(notificationId: string, delivered: boolean, serviceRoleK
   await rpc("complete_telegram_appointment_reminder", serviceRoleKey, { target_notification_id: notificationId, delivered, failure_message: failureMessage ?? null });
 }
 
+async function sendTelegram(config: { botToken: string; chatId: string }, text: string) {
+  const response = await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: config.chatId, text }), cache: "no-store" });
+  if (!response.ok) throw new Error(`Telegram returned ${response.status}.`);
+}
+
+// Daily team digests (unpaid reminders, low stock), claimed once per clinic day.
+async function processDigests(config: { botToken: string; chatId: string; serviceRoleKey: string }) {
+  const digests = await rpc<DueDigest[]>("claim_staff_digests", config.serviceRoleKey, {});
+  let delivered = 0, failed = 0;
+  for (const digest of digests) {
+    try {
+      if (!isStaffDigestKind(digest.kind)) throw new Error("Unknown digest kind.");
+      await sendTelegram(config, staffDigestText(digest.kind, digest.item_count));
+      await rpc("complete_staff_digest", config.serviceRoleKey, { target_notification_id: digest.notification_id, delivered: true, failure_message: null }); delivered += 1;
+    } catch (error) {
+      await rpc("complete_staff_digest", config.serviceRoleKey, { target_notification_id: digest.notification_id, delivered: false, failure_message: error instanceof Error ? error.message : "Telegram delivery failed." }); failed += 1;
+    }
+  }
+  return { delivered, failed };
+}
+
 export async function POST(request: Request) {
   const config = getConfiguration();
   if (!config) return Response.json({ error: "Reminder service is not configured." }, { status: 503 });
@@ -44,14 +67,14 @@ export async function POST(request: Request) {
     let delivered = 0, failed = 0;
     for (const reminder of reminders) {
       try {
-        const response = await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: config.chatId, text: telegramText(reminder) }), cache: "no-store" });
-        if (!response.ok) throw new Error(`Telegram returned ${response.status}.`);
+        await sendTelegram(config, telegramText(reminder));
         await complete(reminder.notification_id, true, config.serviceRoleKey); delivered += 1;
       } catch (error) {
         await complete(reminder.notification_id, false, config.serviceRoleKey, error instanceof Error ? error.message : "Telegram delivery failed."); failed += 1;
       }
     }
-    return Response.json({ delivered, failed });
+    const digests = await processDigests(config);
+    return Response.json({ delivered, failed, digests });
   } catch {
     return Response.json({ error: "Reminder processing failed." }, { status: 500 });
   }

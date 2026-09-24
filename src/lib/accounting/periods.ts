@@ -1,3 +1,4 @@
+import { ClinicDateTimeFormat } from "../clinic-time.ts";
 export const accountingPresets = [
   "current_week",
   "current_month",
@@ -54,8 +55,7 @@ function addYears(date: Date, years: number): Date {
 }
 
 export function clinicDate(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Casablanca",
+  const parts = new ClinicDateTimeFormat("en-CA", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

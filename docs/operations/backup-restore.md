@@ -1,5 +1,33 @@
 # Sauvegarde et restauration — opérateur
 
+## Exercice mensuel automatisé (depuis le 24 septembre 2026)
+
+La procédure M15 ci-dessous est automatisée par `npm run backup:drill`
+(`scripts/backup-drill.sh`). À lancer chaque mois, hors heures d'ouverture, disque
+externe branché ; un rappel systemd utilisateur s'affiche le 1er de chaque mois à
+10:00 (`scripts/install-backup-reminder.sh`, rattrapé à la connexion si le poste
+était éteint). Le script, interactif, ne stocke ni mot de passe DB ni phrase GPG :
+
+1. connexion session pooler en lecture seule, TLS `verify-full` avec le CA monté
+   en lecture seule (`SUPABASE_CA_CERT`, défaut `~/Téléchargements/prod-ca-2021.crt`) ;
+2. inventaire de la source avant et après l'export ; tout écart (écriture pendant
+   l'export) arrête l'exercice ;
+3. `pg_dump` custom de `public` et `private` ;
+4. chiffrement GPG AES256, déchiffrement et comparaison SHA-256, suppression de la
+   copie claire (suppression de fichier, pas effacement sécurisé) ;
+5. restauration pre-data / data / post-data dans un conteneur `postgres:17` jetable
+   `--network=none`, données en tmpfs, avec les mêmes prérequis de plateforme que M15
+   (rôles NOLOGIN, extensions, substituts `auth.*`, ancrages UUID) ; comparaison des
+   tables et nombres de lignes, fonctions (définitions, SECURITY DEFINER, search_path),
+   contraintes, index, triggers, politiques RLS, droits et invariants financiers ;
+6. copie facultative sur le disque externe avec SHA-256 vérifié, `metadata.json`,
+   `restore-verification.json` et une ligne dans `journal-restauration.tsv` du
+   dossier de sauvegarde (aucune donnée patient ni secret).
+
+Mêmes limites que M15 : ni identités Auth, ni facteurs MFA, ni Storage. Le réseau
+utilisé doit laisser passer PostgreSQL (5432) vers le pooler : le 24 septembre, le
+réseau du poste bloquait ce trafic alors que HTTPS passait.
+
 ## M15 — procédure réellement vérifiée le 16 septembre 2026
 
 Une archive custom `public/private` a été créée hors dépôt après préflight

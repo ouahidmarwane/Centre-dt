@@ -24,7 +24,7 @@ export async function updateAppointmentAction(appointmentId:string,_state:Appoin
 
 export async function cancelAppointmentAction(appointmentId:string,patientId:string,_state:AppointmentActionState,formData:FormData):Promise<AppointmentActionState>{
   await requirePermission("appointments.cancel");if(!isUuid(appointmentId)||!isUuid(patientId))return fail("Rendez-vous invalide.");const reason=String(formData.get("reason")??"").trim();if(reason.length<5||reason.length>500)return fail("Le motif doit contenir entre 5 et 500 caractères.",{reason:"Motif requis."});
-  const supabase=await createClient();const {data,error}=await supabase.rpc("cancel_appointment",{target_appointment_id:appointmentId,target_patient_id:patientId,target_reason:reason});if(error||!data)return fail(error?rpcMessage(error.code):"Ce rendez-vous ne peut plus être annulé.");refresh(patientId);return {success:true,message:"Rendez-vous annulé; son historique est conservé.",fieldErrors:{}};
+  const supabase=await createClient();const {data,error}=await supabase.rpc("cancel_appointment",{target_appointment_id:appointmentId,target_patient_id:patientId,target_reason:reason});if(error||!data)return fail(error?rpcMessage(error.code):"Ce rendez-vous ne peut plus être annulé.");refresh(patientId);return {success:true,message:"Rendez-vous annulé; son historique est conservé. Le créneau apparaît dans « Créneaux libérés » pour le proposer à un patient en attente.",fieldErrors:{}};
 }
 
 export async function setAppointmentStatusAction(appointmentId:string,patientId:string,status:AppointmentStatus):Promise<void>{

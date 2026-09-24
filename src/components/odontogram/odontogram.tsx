@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import Image from "next/image";
 import { useActionState, useRef, useState } from "react";
 
@@ -39,7 +40,7 @@ export function Odontogram({patientActive,role,findings,revisions,createAction,u
   </section>;
 }
 
-const dateTime=new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Casablanca"});
+const dateTime=new ClinicDateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short"});
 const roleLabel=(role:string)=>role==="doctor"?"Médecin":"Assistant(e)";
 
 // Colour language shared by bubbles, pills and the tracker.

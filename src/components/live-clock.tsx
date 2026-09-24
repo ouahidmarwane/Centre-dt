@@ -1,10 +1,10 @@
 "use client";
 
+import { ClinicDateTimeFormat } from "@/lib/clinic-time";
 import { useSyncExternalStore } from "react";
 
-const ZONE = "Africa/Casablanca";
-const timeParts = new Intl.DateTimeFormat("fr-FR", { timeZone: ZONE, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
-const dayLabel = new Intl.DateTimeFormat("fr-FR", { timeZone: ZONE, weekday: "long", day: "numeric", month: "long" });
+const timeParts = new ClinicDateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+const dayLabel = new ClinicDateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
 // One tick per second shared by every subscriber.
 function subscribe(onTick: () => void) {
